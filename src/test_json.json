@@ -3,12 +3,13 @@
     [
         {
             "name": "plc1",
-            "connection_type": "tcp",
-            "connection_config":
-            {
-                "ip": "192.168.0.21",
-                "port": 502
-            },
+            "connections":
+            [
+                {
+                    "ip": "192.168.0.21",
+                    "port": 502
+                }
+            ],
             "values":
             {
                 "coils":

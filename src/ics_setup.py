@@ -6,6 +6,10 @@
 import yaml
 import json
 import ipaddress
+import shutil
+from pathlib import Path
+
+from components import PLC
 
 # FUNCTION: parse_json_to_yaml
 # PURPOSE: Opens and validates the JSON file and parses it into a
@@ -23,10 +27,10 @@ def parse_json_to_yaml(json_filename, yaml_filename):
             print(f"Invalid JSON: {e}")
 
         # create networks
-        networks = construct_networks(json_content)
+        networks = build_network_yaml(json_content)
 
         # create PLCs section
-        plcs = construct_plcs(json_content)
+        plcs = build_plc_yaml(json_content)
 
         # create the YAML file
         parsed_json_content = {
@@ -34,18 +38,15 @@ def parse_json_to_yaml(json_filename, yaml_filename):
             "networks": networks,
         }
 
-        print(json.dumps(parsed_json_content, indent=4))
-
-
         yaml_content = yaml.dump(parsed_json_content, sort_keys=False)
         with open(yaml_filename, "w") as yaml_file:
             yaml_file.write(yaml_content)
     
-    return json_content, parsed_json_content
+    return json_content
 
-# FUNCTION: construct_networks
+# FUNCTION: build_network_yaml
 # PURPOSE: Builds the section of the YAML docker compose file for the IP networks
-def construct_networks(json_content):
+def build_network_yaml(json_content):
     json_networks = {}
 
     for network in json_content["networks"]:
@@ -72,10 +73,9 @@ def construct_networks(json_content):
     
     return json_networks
 
-
-# FUNCTION: contruct_plcs
+# FUNCTION: build_plc_yaml
 # PURPOSE:  Builds the section of the YAML file for the PLCs
-def construct_plcs(json_content):
+def build_plc_yaml(json_content):
     json_plcs = {}
 
     for plc in json_content["plcs"]:
@@ -117,16 +117,40 @@ def construct_plcs(json_content):
 
     return json_plcs
 
+def create_containers(json_content):
+    path = Path(__file__).resolve().parent
+
+    # delete all existing container directories
+    shutil.rmtree(f"{path}/containers", ignore_errors=True)
+    Path(f"{path}/containers").mkdir()
+
+    # create PLC directories
+    for plc in json_content["plcs"]:
+        Path(f"{path}/containers/{plc['name']}").mkdir()
+        Path(f"{path}/containers/{plc['name']}/src").mkdir()
+
+        shutil.copy(f"{path}/docker-files/component/Dockerfile", f"{path}/containers/{plc['name']}")
+        
+        # create JSON configuration
+        json_config = {
+            "connection_type": plc["connection_type"],
+            "connection_config": plc["connection_config"],
+            "values": plc["values"]
+        }
+
+        # write confiugration into the containers source code as a JSON file
+        with open(f"{path}/containers/{plc['name']}/src/config.json", "w") as conf_file:
+            conf_file.write(json.dumps(json_config, indent=4))
 
 # FUNCTION: build
 # PURPOSE:  Builds the simulation content, which includes the docker compoes YAML file
 #           and the required container directories.
-def main():
+def build():
     # create the docker compose yaml file
     json_content = parse_json_to_yaml("test_json.json", "test_yaml.yaml")
 
-    # create all container directories
-
+    # create container directories
+    create_containers(json_content)
 
 if __name__ == "__main__":
-    main()
+    build()
