@@ -2,3 +2,8 @@
 
 # TODO: will be the main entry point for the simulation
 # probs won't need it as docker compose may be used in a similar setup to ICS_Simulation
+
+# Should:
+# 1. Build YAML file
+# 2. Build container directories
+

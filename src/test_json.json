@@ -42,6 +42,65 @@
                     }
                 }
             ]
+        },
+
+        {
+            "name": "plc2",
+            "connection_type": "tcp",
+            "connection_config":
+            {
+                "ip": "192.168.0.22",
+                "port": 502
+            },
+            "values":
+            {
+                "coils":
+                [
+                    {
+                        "address": 21,
+                        "count": 1
+                    }
+                ],
+                "discrete_input":
+                [
+                    {
+                        "address": 21,
+                        "count": 1
+                    }
+                ],
+                "holding_register":
+                [
+                    {
+                        "address": 21,
+                        "count": 1
+                    }
+
+                ],
+                "input_register":
+                [
+
+                ]
+            },
+            "monitors":
+            [
+                {
+                    "connection_type": "tcp/rtu",
+                    "connection_config":
+                    {
+                        "ip": "192.168.0.11",
+                        "port": 502
+                    }
+                }
+            ]
+        }
+    ],
+
+    "networks":
+    [
+        {
+            "docker_name": "vlan1",
+            "name": "ics_simlab",
+            "subnet": "192.168.0.0/24"
         }
     ]
 }
