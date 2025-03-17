@@ -1,0 +1,47 @@
+{
+    "plcs":
+    [
+        {
+            "name": "plc1",
+            "connection_type": "tcp",
+            "connection_config":
+            {
+                "ip": "192.168.0.21",
+                "port": 502
+            },
+            "values":
+            {
+                "coils":
+                [
+                    {
+                        "address": 21,
+                        "count": 1
+                    }
+                ],
+                "discrete_input":
+                [
+
+                ],
+                "holding_register":
+                [
+
+                ],
+                "input_register":
+                [
+
+                ]
+            },
+            "monitors":
+            [
+                {
+                    "connection_type": "tcp/rtu",
+                    "connection_config":
+                    {
+                        "ip": "192.168.0.11",
+                        "port": 502
+                    }
+                }
+            ]
+        }
+    ]
+}
