@@ -9,8 +9,6 @@ import ipaddress
 import shutil
 from pathlib import Path
 
-from components import PLC
-
 # FUNCTION: parse_json_to_yaml
 # PURPOSE: Opens and validates the JSON file and parses it into a
 #          Docker Compose YAML file
@@ -95,28 +93,39 @@ def build_plc_yaml(json_content):
         }
 
         # add network info if needed
-        if plc["connection_type"] == "tcp":
-            ip = plc["connection_config"]["ip"]
+        found_ip = False
+        for connection in plc["connection_endpoints"]:
 
-            # find network info that the ip fits into
-            network_docker_name = ""
-            for network in json_content["networks"]:
-                if ipaddress.ip_address(ip) in ipaddress.ip_network(network["subnet"], strict=False):
-                    network_docker_name = network["docker_name"]
-                    break
+            if connection["type"] == "tcp":
+                ip = connection["ip"]
 
-            # throw exception if no valid network exists
-            if network_docker_name == "":
-                raise KeyError(f"No valid network exists for this component: {container_name}")
+                # find network info that the ip fits into
+                network_docker_name = ""
+                for network in json_content["networks"]:
+                    if ipaddress.ip_address(ip) in ipaddress.ip_network(network["subnet"], strict=False):
+                        network_docker_name = network["docker_name"]
 
-            json_plcs[container_name]["networks"] = {
-                network_docker_name: {
-                    "ipv4_address": ip
+                        # check if more than one IP is given
+                        if found_ip:
+                            raise KeyError("More than one IP specified")
+                        break
+
+                # throw exception if no valid network exists
+                if network_docker_name == "":
+                    raise KeyError(f"No valid network exists for this component: {container_name}")
+
+                json_plcs[container_name]["networks"] = {
+                    network_docker_name: {
+                        "ipv4_address": ip
+                    }
                 }
-            }
+                found_ip = True
 
     return json_plcs
 
+# FUNCTION: create_containers
+# PURPOSE:  Builds the directory containers for the main components of the simulation. These
+#           include the PLCs, HMIs, and the sensors and actuators.
 def create_containers(json_content):
     path = Path(__file__).resolve().parent
 
@@ -133,8 +142,7 @@ def create_containers(json_content):
         
         # create JSON configuration
         json_config = {
-            "connection_type": plc["connection_type"],
-            "connection_config": plc["connection_config"],
+            "connection_endpoints": plc["connection_endpoints"],
             "values": plc["values"]
         }
 

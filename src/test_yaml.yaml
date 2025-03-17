@@ -10,9 +10,6 @@ services:
     build: containers/plc2
     container_name: plc2
     privileged: true
-    networks:
-      vlan1:
-        ipv4_address: 192.168.0.22
 networks:
   networks:
     vlan1:
