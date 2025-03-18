@@ -4,12 +4,11 @@ FROM ubuntu:20.04
 RUN apt-get update
 
 # Install required packages for python
-#RUN apt-get install -y python3 \
-#    && apt-get install -y python3-pip 
+RUN apt-get install -y python3 \
+    && apt-get install -y python3-pip 
 
-#RUN pip3 install pyModbusTCP
-#RUN pip3 install pymodbus
-#RUN pip3 install pyserial
+RUN pip3 install pymodbus
+RUN pip3 install pyserial
 #RUN pip3 install scipy
 #RUN pip3 install numpy
 #RUN pip3 install flask

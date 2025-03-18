@@ -1,0 +1,32 @@
+services:
+  plc1:
+    build: /home/jaxson/Documents/IndustrialControlSystems/ICS-SimLab/simulation/containers/plc1
+    container_name: plc1
+    privileged: true
+    command:
+    - python3
+    - plc.py
+    networks:
+      vlan1:
+        ipv4_address: 192.168.0.21
+    volumes:
+    - /home/jaxson/Documents/IndustrialControlSystems/ICS-SimLab/simulation/communications/ttyS1:/src/ttyS1
+  sensor1:
+    build: /home/jaxson/Documents/IndustrialControlSystems/ICS-SimLab/simulation/containers/sensor1
+    container_name: sensor1
+    privileged: true
+    volumes:
+    - /home/jaxson/Documents/IndustrialControlSystems/ICS-SimLab/simulation/communications/hardware_interactions.db:/src/hardware_interactions.db
+    - /home/jaxson/Documents/IndustrialControlSystems/ICS-SimLab/simulation/communications/ttyS2:/src/ttyS2
+    command:
+    - python3
+    - sensor.py
+networks:
+  vlan1:
+    driver: bridge
+    name: ics_simlab
+    ipam:
+      config:
+      - subnet: 192.168.0.0/24
+    driver_opts:
+      com.docker.network.bridge.name: ics_simlab

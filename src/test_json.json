@@ -13,7 +13,7 @@
                 {
                     "type": "rtu",
                     "slave_id": 10,
-                    "comm_port": "n/a"
+                    "comm_port": "ttyS1"
                 }
             ],
             "values":
@@ -21,7 +21,7 @@
                 "coils":
                 [
                     {
-                        "address": 21,
+                        "address": 11,
                         "count": 1
                     }
                 ],
@@ -49,17 +49,19 @@
                     }
                 }
             ]
-        },
+        }
+    ],
 
+    "sensors":
+    [
         {
-            "name": "plc2",
+            "name": "sensor1",
             "connection_endpoints":
             [
                 {
                     "type": "rtu",
-                    "role": "slave",
                     "slave_id": 11,
-                    "comm_port": "n/a"
+                    "comm_port": "ttyS2"
                 }
             ],
             "values":
@@ -67,7 +69,7 @@
                 "coils":
                 [
                     {
-                        "address": 21,
+                        "address": 11,
                         "count": 1
                     }
                 ],
@@ -83,22 +85,19 @@
                 [
 
                 ]
-            },
-            "monitors":
-            [
-                {
-                    "connection_type": "tcp/rtu",
-                    "connection_config":
-                    {
-                        "ip": "192.168.0.11",
-                        "port": 502
-                    }
-                }
-            ]
+            }
         }
     ],
 
-    "networks":
+    "serial_networks":
+    [
+        {
+            "src": "ttyS1",
+            "dest": "ttyS2"
+        }
+    ],
+
+    "ip_networks":
     [
         {
             "docker_name": "vlan1",
