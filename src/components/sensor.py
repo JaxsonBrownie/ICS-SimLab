@@ -31,7 +31,7 @@ async def run_tcp_server(connection, context):
 # PURPOSE:  An asynchronous function to use for modbus rtu server
 async def run_rtu_slave(connection, context):
     rtu_slave = ModbusSerialServer(context=context, port=connection["comm_port"], baudrate=9600, timeout=1)
-    print("Starting rtu")
+    print(f"Starting rtu slave on port {connection['comm_port']}")
     await rtu_slave.serve_forever()
 
 
@@ -64,8 +64,13 @@ async def main():
     configs = retrieve_configs("config.json")
 
     # create slave context (by default will have all address ranges)
-    slave_context = ModbusSlaveContext()
+    data_block = ModbusSequentialDataBlock.create()
+    slave_context = ModbusSlaveContext(hr=data_block)
     context = ModbusServerContext(slaves=slave_context, single=True)
+    
+    data_block.setValues(11, 25)
+    print(data_block.getValues(11, 1))
+    print(data_block.getValues(10, 1))
 
     # start any configured servers (tcp, rtu or both) with the same context
     await start_servers(configs, context)

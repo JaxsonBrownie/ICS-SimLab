@@ -80,7 +80,6 @@ def build_plc_yaml(json_content):
     json_plcs = {}
 
     for plc in json_content["plcs"]:
-
         # extract basic docker configuration
         build = f"{root_path}/simulation/containers/{plc['name']}"
         container_name = plc["name"]
@@ -90,13 +89,12 @@ def build_plc_yaml(json_content):
             "build": build,
             "container_name": container_name,
             "privileged": privileged,
-            "command": ["python3", "plc.py"]
+            "command": ["python3", "-u", "plc.py"]
         }
 
         # add network info if needed
         found_ip = False
         for connection in plc["connection_endpoints"]:
-
             if connection["type"] == "tcp":
                 ip = connection["ip"]
 
@@ -122,6 +120,15 @@ def build_plc_yaml(json_content):
                 }
                 found_ip = True
             elif connection["type"] == "rtu":
+                comm_port = connection["comm_port"]
+                json_plcs[container_name]["volumes"] = [
+                    f"{root_path}/simulation/communications/{comm_port}:/src/{comm_port}"
+                ]
+
+        # add monitor info
+        for monitor in plc["monitors"]:
+            connection = monitor["connection"]
+            if connection["type"] == "rtu":
                 comm_port = connection["comm_port"]
                 json_plcs[container_name]["volumes"] = [
                     f"{root_path}/simulation/communications/{comm_port}:/src/{comm_port}"
@@ -157,7 +164,7 @@ def build_sensor_yaml(json_content):
             "container_name": container_name,
             "privileged": privileged,
             "volumes": volumes,
-            "command": ["python3", "sensor.py"]
+            "command": ["python3", "-u", "sensor.py"]
         }
     return json_sensors
 
@@ -181,7 +188,8 @@ def create_containers(json_content):
         # create JSON configuration and write into directory
         json_config = {
             "connection_endpoints": plc["connection_endpoints"],
-            "values": plc["values"]
+            "values": plc["values"],
+            "monitors": plc["monitors"]
         }
         with open(f"{root_path}/simulation/containers/{plc['name']}/src/config.json", "w") as conf_file:
             conf_file.write(json.dumps(json_config, indent=4))

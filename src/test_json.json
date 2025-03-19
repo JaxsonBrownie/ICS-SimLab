@@ -9,11 +9,6 @@
                     "type": "tcp",
                     "ip": "192.168.0.21",
                     "port": 5020
-                },
-                {
-                    "type": "rtu",
-                    "slave_id": 10,
-                    "comm_port": "ttyS1"
                 }
             ],
             "values":
@@ -41,12 +36,15 @@
             "monitors":
             [
                 {
-                    "connection_type": "tcp/rtu",
-                    "connection_config":
+                    "connection":
                     {
-                        "ip": "192.168.0.11",
-                        "port": 5020
-                    }
+                        "type": "rtu",
+                        "slave_id": 11,
+                        "comm_port": "ttyS1"
+                    },
+                    "address": 11,
+                    "count": 1,
+                    "interval": 5
                 }
             ]
         }

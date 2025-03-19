@@ -5,6 +5,7 @@ services:
     privileged: true
     command:
     - python3
+    - -u
     - plc.py
     networks:
       vlan1:
@@ -20,6 +21,7 @@ services:
     - /home/jaxson/Documents/IndustrialControlSystems/ICS-SimLab/simulation/communications/ttyS2:/src/ttyS2
     command:
     - python3
+    - -u
     - sensor.py
 networks:
   vlan1:
