@@ -1,9 +1,23 @@
 #!/usr/bin/env python3
 
-# TODO: will be the main entry point for the simulation
-# probs won't need it as docker compose may be used in a similar setup to ICS_Simulation
+# FILE:     main.py
+# PURPOSE:  Convenient entry point to start the ICS simulation
 
-# Should:
-# 1. Build YAML file
-# 2. Build container directories
+import subprocess
+from src import ics_setup
+from pathlib import Path
 
+if __name__ == "__main__":
+    # get absolute parent path
+    root_path = Path(__file__).resolve().parent
+
+    # build everything
+    print("BUILDING SIMULATION FILES")
+    ics_setup.build()
+
+    # build images
+    print("BUILDING IMAGES")
+    dc_build = subprocess.Popen(["docker", "compose", "-f", f"{root_path}/docker-compose.yaml", "build"])
+
+    dc_build.wait()
+    print("DONE! Now run \"docker compose run\" in your terminal.")

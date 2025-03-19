@@ -92,9 +92,9 @@ def build_plc_yaml(json_content):
             "command": ["python3", "-u", "plc.py"]
         }
 
-        # add network info if needed
+        # add inbound connection info
         found_ip = False
-        for connection in plc["connection_endpoints"]:
+        for connection in plc["inbound_connections"]:
             if connection["type"] == "tcp":
                 ip = connection["ip"]
 
@@ -106,7 +106,7 @@ def build_plc_yaml(json_content):
 
                         # check if more than one IP is given
                         if found_ip:
-                            raise KeyError("More than one IP specified")
+                            raise KeyError("More than one inbound IP specified")
                         break
 
                 # throw exception if no valid network exists
@@ -120,15 +120,16 @@ def build_plc_yaml(json_content):
                 }
                 found_ip = True
             elif connection["type"] == "rtu":
+                # add comm port as a volume
                 comm_port = connection["comm_port"]
                 json_plcs[container_name]["volumes"] = [
                     f"{root_path}/simulation/communications/{comm_port}:/src/{comm_port}"
                 ]
 
-        # add monitor info
-        for monitor in plc["monitors"]:
-            connection = monitor["connection"]
+        # add outbound connection info (only relevant for rtu)
+        for connection in plc["outbound_connections"]:
             if connection["type"] == "rtu":
+                # add comm port as a volume
                 comm_port = connection["comm_port"]
                 json_plcs[container_name]["volumes"] = [
                     f"{root_path}/simulation/communications/{comm_port}:/src/{comm_port}"
@@ -187,7 +188,8 @@ def create_containers(json_content):
         
         # create JSON configuration and write into directory
         json_config = {
-            "connection_endpoints": plc["connection_endpoints"],
+            "inbound_connections": plc["inbound_connections"],
+            "outbound_connections": plc["outbound_connections"],
             "values": plc["values"],
             "monitors": plc["monitors"]
         }
@@ -248,8 +250,10 @@ def create_communications(json_content):
 # PURPOSE:  Builds the simulation content, which includes the docker compoes YAML,
 #           the docker container directories, and the communication files.
 def build():
+    root_path = Path(__file__).resolve().parent.parent
+
     # create the docker compose yaml file
-    json_content = parse_json_to_yaml("test_json.json", "docker-compose.yaml")
+    json_content = parse_json_to_yaml(f"{root_path}/config/test_json.json", f"{root_path}/docker-compose.yaml")
 
     # create container directories
     create_containers(json_content)

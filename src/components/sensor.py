@@ -64,13 +64,8 @@ async def main():
     configs = retrieve_configs("config.json")
 
     # create slave context (by default will have all address ranges)
-    data_block = ModbusSequentialDataBlock.create()
-    slave_context = ModbusSlaveContext(hr=data_block)
+    slave_context = ModbusSlaveContext()
     context = ModbusServerContext(slaves=slave_context, single=True)
-    
-    data_block.setValues(11, 25)
-    print(data_block.getValues(11, 1))
-    print(data_block.getValues(10, 1))
 
     # start any configured servers (tcp, rtu or both) with the same context
     await start_servers(configs, context)

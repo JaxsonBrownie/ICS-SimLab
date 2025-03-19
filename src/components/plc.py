@@ -39,69 +39,119 @@ async def run_rtu_slave(connection, context):
     await rtu_slave.serve_forever()
 
 
+# FUNCTION: run_tcp_client
+# PURPOSE:  Creates a tcp client
 def run_tcp_client(connection):
     tcp_client = ModbusTcpClient(host=connection["ip"], port=connection["port"])
     print("Starting tcp client")
-    return tcp_client.connect()
+    tcp_client.connect()
+    return tcp_client
 
 
+# FUNCTION: run_rtu_master
+# PURPOSE:  Create an rtu master connection
 def run_rtu_master(connection):
     rtu_master = ModbusSerialClient(port=connection["comm_port"], baudrate=9600, timeout=1)
-    rtu_master.connect()
     print("Starting rtu master")
-    print(f"READING THROUGH PORT {connection['comm_port']} ADDRESS 11")
-    for i in range(20):
-        print(rtu_master.read_holding_registers(0, 30))
-        print(rtu_master.read_holding_registers(0, 30).registers)
-        time.sleep(1)
-    rtu_master.close()
-    return "po"
+    rtu_master.connect()
+    return rtu_master
 
 
-# FUNCTION: start_servers
-# PURPOSE:  Starts any tcp/rtu servers configured in the config file
-async def start_servers(configs, context):
+# FUNCTION: init_inbound_cons
+# PURPOSE:  Starts any tcp/rtu servers configured in the config file for inbound connections
+async def init_inbound_cons(configs, context):
     server_tasks = []
-    for connection in configs["connection_endpoints"]:
+    for connection in configs["inbound_connections"]:
         if connection["type"] == "tcp":            
             # start tcp server thread
             server_tasks.append(asyncio.create_task(run_tcp_server(connection, context)))
         elif connection["type"] == "rtu":
             # start rtu slave thread
-            server_tasks.append(asyncio.create_task(run_rtu_slave(connection, context)))   
+            server_tasks.append(asyncio.create_task(run_rtu_slave(connection, context))) 
+    # wait for all servers  
     for task in server_tasks:
         await task
 
 
-# FUNCTION: start_monitors
-# PURPOSE: Starts any outbound connections for monitoring device data
-def start_monitors(configs):
-    for monitor in configs["monitors"]:
-        connection = monitor["connection"]
+# FUNCTION: init_outbound_cons
+# PURPOSE:  Initialised all outbound connections. These connections can be shared amongst
+#           monitors. Returns a map of connection ids as keys, and the connection object
+#           itself as the values.
+def init_outbound_cons(configs):
+    connections = {}
+    for connection in configs["outbound_connections"]:
         if connection["type"] == "tcp":
-            tcp_client = run_tcp_client(connection)
+            client = run_tcp_client(connection)
+            connections[connection["id"]] = client
         elif connection["type"] == "rtu":
-            rtu_master = run_rtu_master(connection)
-    
+            client = run_rtu_master(connection)
+            connections[connection["id"]] = client
+    return connections
 
+async def monitor(monitor_configs, modbus_con):
+    print(f"Starting monitor: {monitor_configs['id']}")
+    interval = monitor_configs["interval"]
+    value_type = monitor_configs["value_type"]
+    address = monitor_configs["address"]
+    count = monitor_configs["count"]
 
+    while True:
+        # select the correct function
+        if value_type == "coil":
+            values = modbus_con.read_coils(address, count).bits
+        elif value_type == "discrete_input":
+            values = modbus_con.read_discrete_inputs(address, count).bits
+        elif value_type == "holding_register":
+            values = modbus_con.read_holding_registers(address, count).registers
+        elif value_type == "input_register":
+            values = modbus_con.read_input_registers(address, count).registers
+
+        print(values)
+        time.sleep(interval)
+        
+
+async def start_monitors(configs, outbound_cons):
+    monitors = []
+    for monitor_config in configs["monitors"]:
+        # get the outbound connection (Modbus object) for the monitor
+        outbound_con_id = monitor_config["outbound_connection_id"]
+        modbus_con = outbound_cons[outbound_con_id]
+
+        # start the monitor thread
+        monitors.append(asyncio.create_task(monitor(monitor_config, modbus_con)))
+    return monitors
+
+        
 # FUNCTION: main
 # PURPOSE:  The main execution
 async def main():
     # retrieve configurations from the given JSON (will be in the same directory)
-    configs = retrieve_configs("config.json")\
+    configs = retrieve_configs("config.json")
 
     # create slave context (by default will have all address ranges)
     slave_context = ModbusSlaveContext()
     context = ModbusServerContext(slaves=slave_context, single=True)
 
-    # start any configured servers (tcp, rtu or both) with the same context
-    server_task = asyncio.create_task(start_servers(configs, context))
+    # start any inbound connection servers (tcp, rtu or both) with the same context
+    inbound_cons = asyncio.create_task(init_inbound_cons(configs, context))
+
+    # start any outbound connections
+    outbound_cons = init_outbound_cons(configs)
 
     # start any configured monitors
-    start_monitors(configs)
+    monitors = asyncio.create_task(start_monitors(configs, outbound_cons))
 
-    await server_task
+    # block on the inbound connection servers and monitors
+    await inbound_cons
+    await monitors
+
+    # close all outbound client connections
+    for outbound_con in outbound_cons.values():
+        outbound_con.close()
+    
+    # block
+    while True:
+        time.sleep(1)
 
 if __name__ == "__main__":
     asyncio.run(main())

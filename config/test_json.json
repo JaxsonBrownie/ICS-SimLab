@@ -3,21 +3,31 @@
     [
         {
             "name": "plc1",
-            "connection_endpoints":
+            "inbound_connections":
             [
                 {
                     "type": "tcp",
                     "ip": "192.168.0.21",
-                    "port": 5020
+                    "port": 5020,
+                    "id": "test_tcp"
+                }
+            ],
+            "outbound_connections":
+            [
+                {
+                    "type": "rtu",
+                    "comm_port": "ttyS1",
+                    "id": "sensor"
                 }
             ],
             "values":
             {
-                "coils":
+                "coil":
                 [
                     {
                         "address": 11,
-                        "count": 1
+                        "count": 1,
+                        "id": "sample_coil"
                     }
                 ],
                 "discrete_input":
@@ -36,15 +46,13 @@
             "monitors":
             [
                 {
-                    "connection":
-                    {
-                        "type": "rtu",
-                        "slave_id": 11,
-                        "comm_port": "ttyS1"
-                    },
+                    "outbound_connection_id": "sensor",
+                    "id": "sample_coil",
+                    "value_type": "coil",
+                    "slave_id": 11,
                     "address": 11,
                     "count": 1,
-                    "interval": 5
+                    "interval": 1
                 }
             ]
         }
