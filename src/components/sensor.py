@@ -10,7 +10,7 @@ from pymodbus.server import ModbusTcpServer, ModbusSerialServer, StartSerialServ
 from pymodbus.datastore import ModbusSequentialDataBlock, ModbusSlaveContext, ModbusServerContext
 
 # FUNCTION: retrieve_configs
-# PURPOSE: Retrieves the JSON configs
+# PURPOSE:  Retrieves the JSON configs
 def retrieve_configs(filename):
     with open(filename, "r") as config_file:
         content = config_file.read()
@@ -53,7 +53,7 @@ async def start_servers(configs, context):
 # FUNCTION: start_sensor
 # PURPOSE:  Starts a process to read sensor data from SQLite specific to this sensor.
 #           The column is a TEXT datatype to allow for generic inputs.
-async def start_sensor(configs, context):
+async def start_sensor(configs, context, cursor):
     pass
 
 
@@ -68,13 +68,16 @@ async def main():
     context = ModbusServerContext(slaves=slave_context, single=True)
 
     # start any configured servers (tcp, rtu or both) with the same context
-    await start_servers(configs, context)
+    server_task = start_servers(configs, context)
 
     # connect to hardware SQLite database
     conn = sqlite3.connect("hardware_interactions.db")
     cursor = conn.cursor()
 
     # start the sensor reading
+
+    # await tasks
+    await server_task
 
 
 if __name__ == "__main__":

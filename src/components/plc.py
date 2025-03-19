@@ -4,8 +4,6 @@
 # PURPOSE:  Implements the functionality of a PLC. The configurations are taken from
 #           a JSON file called config.json.
 
-# TODO: have monitors be made as masters/clients
-
 import json
 import asyncio
 import time
@@ -14,7 +12,7 @@ from pymodbus.server import ModbusTcpServer, ModbusSerialServer, StartSerialServ
 from pymodbus.datastore import ModbusSequentialDataBlock, ModbusSlaveContext, ModbusServerContext
 
 # FUNCTION: retrieve_configs
-# PURPOSE: Retrieves the JSON configs
+# PURPOSE:  Retrieves the JSON configs
 def retrieve_configs(filename):
     with open(filename, "r") as config_file:
         content = config_file.read()
@@ -88,6 +86,8 @@ def init_outbound_cons(configs):
             connections[connection["id"]] = client
     return connections
 
+# FUNCTION: monitor
+# PURPOSE:  A monitor thread to continuously read data from a defined and intialised connection
 async def monitor(monitor_configs, modbus_con):
     print(f"Starting monitor: {monitor_configs['id']}")
     interval = monitor_configs["interval"]
@@ -110,6 +110,9 @@ async def monitor(monitor_configs, modbus_con):
         time.sleep(interval)
         
 
+# FUNCTION: start_monitors
+# PURPOSE:  Started all of the monitor threads. Note that more than one monitor can
+#           utilise a single connection (but there must be a connection!).
 async def start_monitors(configs, outbound_cons):
     monitors = []
     for monitor_config in configs["monitors"]:
