@@ -49,9 +49,9 @@
                     "outbound_connection_id": "sensor",
                     "id": "sample_coil",
                     "value_type": "coil",
-                    "slave_id": 11,
-                    "address": 5,
-                    "count": 10,
+                    "slave_id": 170,
+                    "address": 10,
+                    "count": 1,
                     "interval": 1
                 }
             ]

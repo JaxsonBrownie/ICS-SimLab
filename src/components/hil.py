@@ -44,9 +44,6 @@ def database_interaction(configs, physical_values):
                 WHERE physical_value = ?
             """, (physical_values[physical_value['name']], physical_value['name']))
             conn.commit()
-
-        #logging.info(physical_values[physical_value['name']])
-        #logging.info(physical_value['name'])
         time.sleep(0.1)
 
 # FUNCTION: main
@@ -59,7 +56,7 @@ async def main():
     physical_values = {}
     for value in configs["database"]["physical_values"]:
         # initialise all physical values to just be an empty string (the key matters more)
-        physical_values[value["name"]] = "s"
+        physical_values[value["name"]] = ""
 
     # begin sensor simulation thread
     sensor_sim_thread = Thread(target=logic.logic, args=(physical_values, 1))

@@ -65,23 +65,46 @@ def start_sensor(configs, values):
     table = configs["database"]["table"]
 
     while True:
-        # gets values for all values
+        # gets values for all value types from the physical databases
         value = ""
         for coil in configs["values"]["coil"]:
             address = coil["address"]
-            count = coil["count"]
 
             cursor.execute(f"SELECT value FROM {table} WHERE physical_value = ?", (coil['physical_value'],))
             value = cursor.fetchone()
             conn.commit()
 
-            if value:
-                values["coils"].setValues(address, int(value[0]))
-                #print(value[0])
+            if value and value[0] != "":
+                values["co"].setValues(address, int(value[0]))
+        for di in configs["values"]["discrete_input"]:
+            address = di["address"]
 
-        #print(values["coils"].getValues(5, 20))
+            cursor.execute(f"SELECT value FROM {table} WHERE physical_value = ?", (di['physical_value'],))
+            value = cursor.fetchone()
+            conn.commit()
+
+            if value and value[0] != "":
+                values["di"].setValues(address, int(value[0]))
+        for hr in configs["values"]["discrete_input"]:
+            address = hr["address"]
+
+            cursor.execute(f"SELECT value FROM {table} WHERE physical_value = ?", (hr['physical_value'],))
+            value = cursor.fetchone()
+            conn.commit()
+
+            if value and value[0] != "":
+                values["hr"].setValues(address, int(value[0]))
+        for ir in configs["values"]["discrete_input"]:
+            address = ir["address"]
+
+            cursor.execute(f"SELECT value FROM {table} WHERE physical_value = ?", (ir['physical_value'],))
+            value = cursor.fetchone()
+            conn.commit()
+
+            if value and value[0] != "":
+                values["ir"].setValues(address, int(value[0]))
+
         time.sleep(0.2)
-
 
 
 # FUNCTION: main
@@ -100,7 +123,7 @@ async def main():
     context = ModbusServerContext(slaves=slave_context, single=True)
 
     # start any configured servers (tcp, rtu or both) with the same context
-    values = {"coils": co, "discrete_input": di, "holding_registers": hr, "input_registers": ir}
+    values = {"co": co, "di": di, "hr": hr, "ir": ir}
     server_task = start_servers(configs, context)
     
     # start the sensor reading thread

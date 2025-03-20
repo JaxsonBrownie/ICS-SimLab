@@ -8,6 +8,7 @@ import json
 import asyncio
 import time
 import logging
+from threading import Thread
 from pymodbus.client import ModbusTcpClient, ModbusSerialClient
 from pymodbus.server import ModbusTcpServer, ModbusSerialServer, StartSerialServer, StartTcpServer
 from pymodbus.datastore import ModbusSequentialDataBlock, ModbusSlaveContext, ModbusServerContext
@@ -91,7 +92,7 @@ def init_outbound_cons(configs):
 
 # FUNCTION: monitor
 # PURPOSE:  A monitor thread to continuously read data from a defined and intialised connection
-async def monitor(monitor_configs, modbus_con):
+def monitor(monitor_configs, modbus_con):
     print(f"Starting monitor: {monitor_configs['id']}")
     interval = monitor_configs["interval"]
     value_type = monitor_configs["value_type"]
@@ -116,7 +117,7 @@ async def monitor(monitor_configs, modbus_con):
 # FUNCTION: start_monitors
 # PURPOSE:  Started all of the monitor threads. Note that more than one monitor can
 #           utilise a single connection (but there must be a connection!).
-async def start_monitors(configs, outbound_cons):
+def start_monitors(configs, outbound_cons):
     monitors = []
     for monitor_config in configs["monitors"]:
         # get the outbound connection (Modbus object) for the monitor
@@ -124,7 +125,11 @@ async def start_monitors(configs, outbound_cons):
         modbus_con = outbound_cons[outbound_con_id]
 
         # start the monitor thread
-        monitors.append(asyncio.create_task(monitor(monitor_config, modbus_con)))
+        monitor_thread = Thread(target=monitor, args=(monitor_config, modbus_con))
+        monitor_thread.daemon = True
+        monitor_thread.start()
+
+        monitors.append(monitor_thread)
     return monitors
 
         
@@ -147,11 +152,12 @@ async def main():
     time.sleep(2)
 
     # start any configured monitors
-    monitors = asyncio.create_task(start_monitors(configs, outbound_cons))
+    monitor_threads = start_monitors(configs, outbound_cons)
 
     # block on the inbound connection servers and monitors
     await inbound_cons
-    await monitors
+    for monitor_thread in monitor_threads:
+        monitor_thread.join()
 
     # close all outbound client connections
     for outbound_con in outbound_cons.values():
