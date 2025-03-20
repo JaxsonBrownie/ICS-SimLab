@@ -20,4 +20,4 @@ if __name__ == "__main__":
     dc_build = subprocess.Popen(["docker", "compose", "-f", f"{root_path}/docker-compose.yaml", "build"])
 
     dc_build.wait()
-    print("DONE! Now run \"docker compose run\" in your terminal.")
+    print("DONE! Now run \"docker compose up\" in your terminal.")

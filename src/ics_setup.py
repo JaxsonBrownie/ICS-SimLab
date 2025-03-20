@@ -31,10 +31,11 @@ def parse_json_to_yaml(json_filename, yaml_filename):
         networks = build_network_yaml(json_content)
         plcs = build_plc_yaml(json_content)
         sensors = build_sensor_yaml(json_content)
+        hils = build_hil_yaml(json_content)
 
         # create the YAML file
         parsed_json_content = {
-            "services": plcs | sensors,
+            "services": plcs | sensors | hils,
             "networks": networks,
         }
 
@@ -139,7 +140,7 @@ def build_plc_yaml(json_content):
 
 
 # FUNCTION: build_sensor_yaml
-# PURPOSE: Builds the section of the YAML file for the sensors
+# PURPOSE:  Builds the section of the YAML file for the sensors
 def build_sensor_yaml(json_content):
     root_path = Path(__file__).resolve().parent.parent
     json_sensors = {}
@@ -151,10 +152,10 @@ def build_sensor_yaml(json_content):
 
         # add the SQLite database as a volume in the src/ directory
         volumes = []
-        volumes.append(f"{root_path}/simulation/communications/hardware_interactions.db:/src/hardware_interactions.db")
+        volumes.append(f"{root_path}/simulation/communications/physical_interations.db:/src/physical_interations.db")
 
         # add any virtual serial port
-        for connection in sensor["connection_endpoints"]:
+        for connection in sensor["inbound_connections"]:
             if connection["type"] == "rtu":
                 comm_port = connection["comm_port"]
                 volumes.append(f"{root_path}/simulation/communications/{comm_port}:/src/{comm_port}")
@@ -169,6 +170,30 @@ def build_sensor_yaml(json_content):
         }
     return json_sensors
 
+# FUNCTION: build_hil_yaml
+# PURPOSE:  Buidsl the section of the YAML file for the physical hardware-in-the-loop
+def build_hil_yaml(json_content):
+    root_path = Path(__file__).resolve().parent.parent
+    json_hils = {}
+
+    for hil in json_content["hils"]:
+        build = f"{root_path}/simulation/containers/{hil['name']}"
+        container_name = hil["name"]
+        privileged = True
+
+        # add the SQLite database as a volume in the src/ directory
+        volumes = []
+        volumes.append(f"{root_path}/simulation/communications/physical_interations.db:/src/physical_interations.db")
+
+        json_hils[container_name] = {
+            "build": build,
+            "container_name": container_name,
+            "privileged": True,
+            "volumes": volumes,
+            "command": ["python3", "-u", "hil.py"]
+        }
+    return json_hils
+
 
 # FUNCTION: create_containers
 # PURPOSE:  Builds the directory containers for the main components of the simulation. These
@@ -180,7 +205,7 @@ def create_containers(json_content):
     shutil.rmtree(f"{root_path}/simulation/containers", ignore_errors=True)
     Path(f"{root_path}/simulation/containers").mkdir()
 
-    # create PLC directories
+    # create plc directories
     for plc in json_content["plcs"]:
         Path(f"{root_path}/simulation/containers/{plc['name']}").mkdir()
         Path(f"{root_path}/simulation/containers/{plc['name']}/src").mkdir()
@@ -209,16 +234,36 @@ def create_containers(json_content):
         # create JSON configuration and write into directory
         json_config = {
             "database": {
-                "table": f"{sensor['name']}_values"
+                "table": f"{sensor['hil']}",
             },
-            "connection_endpoints": sensor["connection_endpoints"],
-            "values": plc["values"]
+            "inbound_connections": sensor["inbound_connections"],
+            "values": sensor["values"]
         }
         with open(f"{root_path}/simulation/containers/{sensor['name']}/src/config.json", "w") as conf_file:
             conf_file.write(json.dumps(json_config, indent=4))
 
         # copy sensor code
         shutil.copy(f"{root_path}/src/components/sensor.py", f"{root_path}/simulation/containers/{sensor['name']}/src")
+
+    # create hil directories
+    for hil in json_content["hils"]:
+        Path(f"{root_path}/simulation/containers/{hil['name']}").mkdir()
+        Path(f"{root_path}/simulation/containers/{hil['name']}/src").mkdir()
+        shutil.copy(f"{root_path}/src/docker-files/component/Dockerfile", f"{root_path}/simulation/containers/{hil['name']}")
+
+        json_config = {
+            "database": {
+                "table": f"{hil['name']}",
+                "physical_values": hil["physical_values"]
+            },
+        }
+        with open(f"{root_path}/simulation/containers/{hil['name']}/src/config.json", "w") as conf_file:
+            conf_file.write(json.dumps(json_config, indent=4))
+
+        # copy logic file and code
+        logic_file = hil["logic"]
+        shutil.copy(f"{root_path}/logic/{logic_file}", f"{root_path}/simulation/containers/{hil['name']}/src/logic.py")
+        shutil.copy(f"{root_path}/src/components/hil.py", f"{root_path}/simulation/containers/{hil['name']}/src")
 
 
 # FUNCTION: create_communications
@@ -232,7 +277,28 @@ def create_communications(json_content):
     Path(f"{root_path}/simulation/communications").mkdir()
 
     # create hardware SQLite database
-    conn = sqlite3.connect(f"{root_path}/simulation/communications/hardware_interactions.db")
+    conn = sqlite3.connect(f"{root_path}/simulation/communications/physical_interations.db")
+    
+    # create tables for the HIL components in the SQLite database
+    cursor = conn.cursor()
+    for hil in json_content["hils"]:
+        cursor.execute(
+            f"""CREATE TABLE {hil['name']} (
+                physical_value TEXT PRIMARY KEY,
+                value TEXT,
+                timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
+            )"""
+            )
+        conn.commit()
+
+        # create default values for all the physical values (just the empty string)
+        for physical_value in hil["physical_values"]:
+            cursor.execute(
+                f"""INSERT INTO {hil['name']} (physical_value, value)
+                    VALUES (?, ?)
+                """, (physical_value['name'], "")
+            )
+            conn.commit()
     conn.close()
 
     # create virtual serial ports

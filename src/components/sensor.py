@@ -6,8 +6,13 @@
 import json
 import asyncio
 import sqlite3
+import logging
+import time
+from threading import Thread
 from pymodbus.server import ModbusTcpServer, ModbusSerialServer, StartSerialServer, StartTcpServer
 from pymodbus.datastore import ModbusSequentialDataBlock, ModbusSlaveContext, ModbusServerContext
+
+logging.basicConfig(level=logging.INFO, format='%(levelname)s - %(message)s')
 
 # FUNCTION: retrieve_configs
 # PURPOSE:  Retrieves the JSON configs
@@ -39,7 +44,7 @@ async def run_rtu_slave(connection, context):
 # PURPOSE:  Starts any tcp/rtu servers configured in the config file
 async def start_servers(configs, context):
     tasks = []
-    for connection in configs["connection_endpoints"]:
+    for connection in configs["inbound_connections"]:
         if connection["type"] == "tcp":            
             # start tcp server thread
             tasks.append(asyncio.create_task(run_tcp_server(connection, context)))
@@ -53,8 +58,30 @@ async def start_servers(configs, context):
 # FUNCTION: start_sensor
 # PURPOSE:  Starts a process to read sensor data from SQLite specific to this sensor.
 #           The column is a TEXT datatype to allow for generic inputs.
-async def start_sensor(configs, context, cursor):
-    pass
+def start_sensor(configs, values):
+    # connect to hardware SQLite database
+    conn = sqlite3.connect("physical_interations.db")
+    cursor = conn.cursor()
+    table = configs["database"]["table"]
+
+    while True:
+        # gets values for all values
+        value = ""
+        for coil in configs["values"]["coil"]:
+            address = coil["address"]
+            count = coil["count"]
+
+            cursor.execute(f"SELECT value FROM {table} WHERE physical_value = ?", (coil['physical_value'],))
+            value = cursor.fetchone()
+            conn.commit()
+
+            if value:
+                values["coils"].setValues(address, int(value[0]))
+                #print(value[0])
+
+        #print(values["coils"].getValues(5, 20))
+        time.sleep(0.2)
+
 
 
 # FUNCTION: main
@@ -62,19 +89,24 @@ async def start_sensor(configs, context, cursor):
 async def main():
     # retrieve configurations from the given JSON (will be in the same directory)
     configs = retrieve_configs("config.json")
+    logging.info(f"Starting Sensor")
 
     # create slave context (by default will have all address ranges)
-    slave_context = ModbusSlaveContext()
+    co = ModbusSequentialDataBlock.create()
+    di = ModbusSequentialDataBlock.create()
+    hr = ModbusSequentialDataBlock.create()
+    ir = ModbusSequentialDataBlock.create()
+    slave_context = ModbusSlaveContext(co=co, di=di, hr=hr, ir=ir)
     context = ModbusServerContext(slaves=slave_context, single=True)
 
     # start any configured servers (tcp, rtu or both) with the same context
+    values = {"coils": co, "discrete_input": di, "holding_registers": hr, "input_registers": ir}
     server_task = start_servers(configs, context)
-
-    # connect to hardware SQLite database
-    conn = sqlite3.connect("hardware_interactions.db")
-    cursor = conn.cursor()
-
-    # start the sensor reading
+    
+    # start the sensor reading thread
+    sensor_thread = Thread(target=start_sensor, args=(configs, values))
+    sensor_thread.daemon = True
+    sensor_thread.start()
 
     # await tasks
     await server_task

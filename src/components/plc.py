@@ -7,9 +7,12 @@
 import json
 import asyncio
 import time
+import logging
 from pymodbus.client import ModbusTcpClient, ModbusSerialClient
 from pymodbus.server import ModbusTcpServer, ModbusSerialServer, StartSerialServer, StartTcpServer
 from pymodbus.datastore import ModbusSequentialDataBlock, ModbusSlaveContext, ModbusServerContext
+
+logging.basicConfig(level=logging.INFO, format='%(levelname)s - %(message)s')
 
 # FUNCTION: retrieve_configs
 # PURPOSE:  Retrieves the JSON configs
@@ -130,6 +133,7 @@ async def start_monitors(configs, outbound_cons):
 async def main():
     # retrieve configurations from the given JSON (will be in the same directory)
     configs = retrieve_configs("config.json")
+    logging.info(f"Starting PLC")
 
     # create slave context (by default will have all address ranges)
     slave_context = ModbusSlaveContext()
@@ -138,8 +142,9 @@ async def main():
     # start any inbound connection servers (tcp, rtu or both) with the same context
     inbound_cons = asyncio.create_task(init_inbound_cons(configs, context))
 
-    # start any outbound connections
+    # start any outbound connections, waiting 2 seconds to ensure connections are up
     outbound_cons = init_outbound_cons(configs)
+    time.sleep(2)
 
     # start any configured monitors
     monitors = asyncio.create_task(start_monitors(configs, outbound_cons))

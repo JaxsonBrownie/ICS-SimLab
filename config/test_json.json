@@ -50,8 +50,8 @@
                     "id": "sample_coil",
                     "value_type": "coil",
                     "slave_id": 11,
-                    "address": 11,
-                    "count": 1,
+                    "address": 5,
+                    "count": 10,
                     "interval": 1
                 }
             ]
@@ -62,7 +62,8 @@
     [
         {
             "name": "sensor1",
-            "connection_endpoints":
+            "hil": "hil1",
+            "inbound_connections":
             [
                 {
                     "type": "rtu",
@@ -72,11 +73,13 @@
             ],
             "values":
             {
-                "coils":
+                "coil":
                 [
                     {
                         "address": 11,
-                        "count": 1
+                        "count": 1,
+                        "id": "sample_coil",
+                        "physical_value": "static_ground"
                     }
                 ],
                 "discrete_input":
@@ -92,6 +95,20 @@
 
                 ]
             }
+        }
+    ],
+
+    "hils":
+    [
+        {
+            "name": "hil1",
+            "logic": "hil1_logic.py",
+            "physical_values":
+            [
+                {
+                    "name": "static_ground"
+                }
+            ]
         }
     ],
 

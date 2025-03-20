@@ -17,12 +17,22 @@ services:
     container_name: sensor1
     privileged: true
     volumes:
-    - /home/jaxson/Documents/IndustrialControlSystems/ICS-SimLab/simulation/communications/hardware_interactions.db:/src/hardware_interactions.db
+    - /home/jaxson/Documents/IndustrialControlSystems/ICS-SimLab/simulation/communications/physical_interations.db:/src/physical_interations.db
     - /home/jaxson/Documents/IndustrialControlSystems/ICS-SimLab/simulation/communications/ttyS2:/src/ttyS2
     command:
     - python3
     - -u
     - sensor.py
+  hil1:
+    build: /home/jaxson/Documents/IndustrialControlSystems/ICS-SimLab/simulation/containers/hil1
+    container_name: hil1
+    privileged: true
+    volumes:
+    - /home/jaxson/Documents/IndustrialControlSystems/ICS-SimLab/simulation/communications/physical_interations.db:/src/physical_interations.db
+    command:
+    - python3
+    - -u
+    - hil.py
 networks:
   vlan1:
     driver: bridge
