@@ -57,7 +57,9 @@ async def start_servers(configs, context):
 
 # FUNCTION: start_sensor
 # PURPOSE:  Starts a process to read sensor data from SQLite specific to this sensor.
-#           The column is a TEXT datatype to allow for generic inputs.
+#           The column is a TEXT datatype to allow for generic inputs. The input "values"
+#           is a dictonary with ModbusSequentialDataBlock values, corresponding to co
+#           di, hr, and ir as keys.
 def start_sensor(configs, values):
     # connect to hardware SQLite database
     conn = sqlite3.connect("physical_interations.db")

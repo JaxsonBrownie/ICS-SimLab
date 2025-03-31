@@ -151,10 +151,10 @@ async def main():
     outbound_cons = init_outbound_cons(configs)
     time.sleep(2)
 
-    # start any configured monitors
+    # start any configured monitors using the started outbound connections
     monitor_threads = start_monitors(configs, outbound_cons)
 
-    # block on the inbound connection servers and monitors
+    # block on the inbound connection servers and outbound monitors
     await inbound_cons
     for monitor_thread in monitor_threads:
         monitor_thread.join()
@@ -163,7 +163,7 @@ async def main():
     for outbound_con in outbound_cons.values():
         outbound_con.close()
     
-    # block
+    # block (useful if no servers or monitors are made)
     while True:
         time.sleep(1)
 
