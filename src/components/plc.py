@@ -12,6 +12,7 @@ from threading import Thread
 from pymodbus.client import ModbusTcpClient, ModbusSerialClient
 from pymodbus.server import ModbusTcpServer, ModbusSerialServer, StartSerialServer, StartTcpServer
 from pymodbus.datastore import ModbusSequentialDataBlock, ModbusSlaveContext, ModbusServerContext
+from pymodbus.exceptions import ModbusIOException
 
 logging.basicConfig(level=logging.INFO, format='%(levelname)s - %(message)s')
 
@@ -100,17 +101,24 @@ def monitor(monitor_configs, modbus_con):
     count = monitor_configs["count"]
 
     while True:
-        # select the correct function
-        if value_type == "coil":
-            values = modbus_con.read_coils(address, count).bits
-        elif value_type == "discrete_input":
-            values = modbus_con.read_discrete_inputs(address, count).bits
-        elif value_type == "holding_register":
-            values = modbus_con.read_holding_registers(address, count).registers
-        elif value_type == "input_register":
-            values = modbus_con.read_input_registers(address, count).registers
+        try:
+            # select the correct function
+            if value_type == "coil":
+                values = modbus_con.read_coils(address, count).bits
+                print("COIL")
+            elif value_type == "discrete_input":
+                values = modbus_con.read_discrete_inputs(address, count).bits
+                print("DI")
+            elif value_type == "holding_register":
+                values = modbus_con.read_holding_registers(address, count).registers
+                print("HR")
+            elif value_type == "input_register":
+                values = modbus_con.read_input_registers(address, count).registers
+                print("IR")
+            print(values)
+        except:
+            print("Error: couldn't read values")
 
-        print(values)
         time.sleep(interval)
         
 
@@ -124,7 +132,7 @@ def start_monitors(configs, outbound_cons):
         outbound_con_id = monitor_config["outbound_connection_id"]
         modbus_con = outbound_cons[outbound_con_id]
 
-        # start the monitor thread
+        # start the monitor threads
         monitor_thread = Thread(target=monitor, args=(monitor_config, modbus_con))
         monitor_thread.daemon = True
         monitor_thread.start()
@@ -153,6 +161,8 @@ async def main():
 
     # start any configured monitors using the started outbound connections
     monitor_threads = start_monitors(configs, outbound_cons)
+
+    # TODO: logic execution will go here
 
     # block on the inbound connection servers and outbound monitors
     await inbound_cons

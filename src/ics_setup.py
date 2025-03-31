@@ -95,6 +95,7 @@ def build_plc_yaml(json_content):
 
         # add inbound connection info
         found_ip = False
+        json_plcs[container_name]["volumes"] = []
         for connection in plc["inbound_connections"]:
             if connection["type"] == "tcp":
                 ip = connection["ip"]
@@ -123,18 +124,18 @@ def build_plc_yaml(json_content):
             elif connection["type"] == "rtu":
                 # add comm port as a volume
                 comm_port = connection["comm_port"]
-                json_plcs[container_name]["volumes"] = [
+                json_plcs[container_name]["volumes"].append(
                     f"{root_path}/simulation/communications/{comm_port}:/src/{comm_port}"
-                ]
+                )
 
         # add outbound connection info (only relevant for rtu)
         for connection in plc["outbound_connections"]:
             if connection["type"] == "rtu":
                 # add comm port as a volume
                 comm_port = connection["comm_port"]
-                json_plcs[container_name]["volumes"] = [
+                json_plcs[container_name]["volumes"].append(
                     f"{root_path}/simulation/communications/{comm_port}:/src/{comm_port}"
-                ]
+                )
 
     return json_plcs
 
@@ -319,7 +320,9 @@ def build():
     root_path = Path(__file__).resolve().parent.parent
 
     # create the docker compose yaml file
-    json_content = parse_json_to_yaml(f"{root_path}/config/test_json.json", f"{root_path}/docker-compose.yaml")
+    json_filename = "smart_grid_simulation.json"
+    #json_filename = "test_json.json"
+    json_content = parse_json_to_yaml(f"{root_path}/config/{json_filename}", f"{root_path}/docker-compose.yaml")
 
     # create container directories
     create_containers(json_content)

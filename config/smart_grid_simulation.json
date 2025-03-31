@@ -2,55 +2,51 @@
     "plcs":
     [
         {
-            "name": "plc1",
+            "name": "ats_plc",
             "inbound_connections":
             [
-                {
-                    "type": "tcp",
-                    "ip": "192.168.0.21",
-                    "port": 5020,
-                    "id": "test_tcp"
-                }
             ],
             "outbound_connections":
             [
                 {
                     "type": "rtu",
                     "comm_port": "ttyS1",
-                    "id": "sensor"
+                    "id": "sp_pm_con"
+                },
+                {
+                    "type": "rtu",
+                    "comm_port": "ttyS3",
+                    "id": "transfer_switch"
                 }
             ],
             "values":
             {
                 "coil":
                 [
-                    {
-                        "address": 11,
-                        "count": 1,
-                        "id": "sample_coil"
-                    }
                 ],
                 "discrete_input":
                 [
-
                 ],
                 "holding_register":
                 [
-
                 ],
                 "input_register":
                 [
-
+                    {
+                        "address": 100,
+                        "count": 1,
+                        "id": "solar_panel_reading"
+                    }
                 ]
             },
             "monitors":
             [
                 {
-                    "outbound_connection_id": "sensor",
-                    "id": "sample_coil",
-                    "value_type": "coil",
-                    "slave_id": 170,
-                    "address": 10,
+                    "outbound_connection_id": "sp_pm_con",
+                    "id": "solar_panel_reading",
+                    "value_type": "input_register",
+                    "slave_id": 1,
+                    "address": 100,
                     "count": 1,
                     "interval": 1
                 }
@@ -61,13 +57,13 @@
     "sensors":
     [
         {
-            "name": "sensor1",
-            "hil": "hil1",
+            "name": "solar_panel_power_meter",
+            "hil": "electrical_hil",
             "inbound_connections":
             [
                 {
                     "type": "rtu",
-                    "slave_id": 11,
+                    "slave_id": 1,
                     "comm_port": "ttyS2"
                 }
             ],
@@ -75,24 +71,22 @@
             {
                 "coil":
                 [
-                    {
-                        "address": 11,
-                        "count": 1,
-                        "id": "sample_coil",
-                        "physical_value": "static_ground"
-                    }
                 ],
                 "discrete_input":
                 [
-
                 ],
                 "holding_register":
                 [
-
                 ],
                 "input_register":
                 [
 
+                    {
+                        "address": 100,
+                        "count": 1,
+                        "id": "solar_meter_reading",
+                        "physical_value": "solar_power"
+                    }
                 ]
             }
         }
@@ -102,7 +96,7 @@
     [
         {
             "name": "actuator1",
-            "hil": "hil1",
+            "hil": "electrical_hil",
             "inbound_connections":
             [
 
@@ -113,7 +107,7 @@
     "hils":
     [
         {
-            "name": "hil1",
+            "name": "electrical_hil",
             "logic": "electrical_hil_logic.py",
             "physical_values":
             [
@@ -124,7 +118,7 @@
                     "name": "transfer_switch_state"
                 },
                 {
-                    "name": "house_power"
+                    "name": "input_power"
                 }
             ]
         }
@@ -135,6 +129,10 @@
         {
             "src": "ttyS1",
             "dest": "ttyS2"
+        },
+        {
+            "src": "ttyS3",
+            "dest": "ttyS4"
         }
     ],
 

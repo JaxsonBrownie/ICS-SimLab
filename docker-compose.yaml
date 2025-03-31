@@ -1,20 +1,18 @@
 services:
-  plc1:
-    build: /home/jaxson/Documents/IndustrialControlSystems/ICS-SimLab/simulation/containers/plc1
-    container_name: plc1
+  ats_plc:
+    build: /home/jaxson/Documents/IndustrialControlSystems/ICS-SimLab/simulation/containers/ats_plc
+    container_name: ats_plc
     privileged: true
     command:
     - python3
     - -u
     - plc.py
-    networks:
-      vlan1:
-        ipv4_address: 192.168.0.21
     volumes:
     - /home/jaxson/Documents/IndustrialControlSystems/ICS-SimLab/simulation/communications/ttyS1:/src/ttyS1
-  sensor1:
-    build: /home/jaxson/Documents/IndustrialControlSystems/ICS-SimLab/simulation/containers/sensor1
-    container_name: sensor1
+    - /home/jaxson/Documents/IndustrialControlSystems/ICS-SimLab/simulation/communications/ttyS3:/src/ttyS3
+  solar_panel_power_meter:
+    build: /home/jaxson/Documents/IndustrialControlSystems/ICS-SimLab/simulation/containers/solar_panel_power_meter
+    container_name: solar_panel_power_meter
     privileged: true
     volumes:
     - /home/jaxson/Documents/IndustrialControlSystems/ICS-SimLab/simulation/communications/physical_interations.db:/src/physical_interations.db
@@ -23,9 +21,9 @@ services:
     - python3
     - -u
     - sensor.py
-  hil1:
-    build: /home/jaxson/Documents/IndustrialControlSystems/ICS-SimLab/simulation/containers/hil1
-    container_name: hil1
+  electrical_hil:
+    build: /home/jaxson/Documents/IndustrialControlSystems/ICS-SimLab/simulation/containers/electrical_hil
+    container_name: electrical_hil
     privileged: true
     volumes:
     - /home/jaxson/Documents/IndustrialControlSystems/ICS-SimLab/simulation/communications/physical_interations.db:/src/physical_interations.db

@@ -58,7 +58,7 @@ async def main():
         # initialise all physical values to just be an empty string (the key matters more)
         physical_values[value["name"]] = ""
 
-    # begin sensor simulation thread
+    # begin physical simulation thread
     sensor_sim_thread = Thread(target=logic.logic, args=(physical_values, 1))
     sensor_sim_thread.daemon = True
     sensor_sim_thread.start()
@@ -71,7 +71,7 @@ async def main():
     # wait for threads
     sensor_sim_thread.join()
     database_thread.join()
-
+    
 
 if __name__ == "__main__":
     asyncio.run(main())

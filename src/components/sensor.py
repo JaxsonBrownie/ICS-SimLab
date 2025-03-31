@@ -9,7 +9,7 @@ import sqlite3
 import logging
 import time
 from threading import Thread
-from pymodbus.server import ModbusTcpServer, ModbusSerialServer, StartSerialServer, StartTcpServer
+from pymodbus.server import ModbusTcpServer, ModbusSerialServer
 from pymodbus.datastore import ModbusSequentialDataBlock, ModbusSlaveContext, ModbusServerContext
 
 logging.basicConfig(level=logging.INFO, format='%(levelname)s - %(message)s')
@@ -69,15 +69,15 @@ def start_sensor(configs, values):
     while True:
         # gets values for all value types from the physical databases
         value = ""
-        for coil in configs["values"]["coil"]:
-            address = coil["address"]
+        for co in configs["values"]["coil"]:
+            address = co["address"]
 
-            cursor.execute(f"SELECT value FROM {table} WHERE physical_value = ?", (coil['physical_value'],))
+            cursor.execute(f"SELECT value FROM {table} WHERE physical_value = ?", (co['physical_value'],))
             value = cursor.fetchone()
             conn.commit()
 
             if value and value[0] != "":
-                values["co"].setValues(address, int(value[0]))
+                values["co"].setValues(address+1, int(value[0]))
         for di in configs["values"]["discrete_input"]:
             address = di["address"]
 
@@ -86,8 +86,8 @@ def start_sensor(configs, values):
             conn.commit()
 
             if value and value[0] != "":
-                values["di"].setValues(address, int(value[0]))
-        for hr in configs["values"]["discrete_input"]:
+                values["di"].setValues(address+1, int(value[0]))
+        for hr in configs["values"]["holding_register"]:
             address = hr["address"]
 
             cursor.execute(f"SELECT value FROM {table} WHERE physical_value = ?", (hr['physical_value'],))
@@ -95,8 +95,8 @@ def start_sensor(configs, values):
             conn.commit()
 
             if value and value[0] != "":
-                values["hr"].setValues(address, int(value[0]))
-        for ir in configs["values"]["discrete_input"]:
+                values["hr"].setValues(address+1, int(value[0]))
+        for ir in configs["values"]["input_register"]:
             address = ir["address"]
 
             cursor.execute(f"SELECT value FROM {table} WHERE physical_value = ?", (ir['physical_value'],))
@@ -104,7 +104,7 @@ def start_sensor(configs, values):
             conn.commit()
 
             if value and value[0] != "":
-                values["ir"].setValues(address, int(value[0]))
+                values["ir"].setValues(address+1, int(value[0]))
 
         time.sleep(0.2)
 
