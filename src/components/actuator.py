@@ -6,6 +6,8 @@
 import logging
 import json
 import asyncio
+import time
+import sqlite3
 from threading import Thread
 from pymodbus.server import ModbusTcpServer, ModbusSerialServer
 from pymodbus.datastore import ModbusSequentialDataBlock, ModbusSlaveContext, ModbusServerContext
@@ -63,8 +65,65 @@ async def start_servers(configs, context):
 # FUNCTION: update_register_values
 # PURPOSE:  Updates the "register_values" dictionary with the register values of the modbus server,
 #           which is in the "values" dictionary.
-def update_register_values(configs, register_values, values):
-    pass
+def update_register_values(register_values, values):
+
+    print(register_values)
+
+    while True:
+        # create a clone dictionary to hold the "to-be-updated" values
+        updated_register_values = register_values.copy()
+
+        # update the cloned copy with the real modbus values
+        index = 0
+        for co in register_values["coil"]:
+            modbus_value = values["co"].getValues(co["address"], co["count"])
+            updated_register_values["coil"][index]["value"] = modbus_value
+            index += 1
+        index = 0
+        for di in register_values["discrete_input"]:
+            modbus_value = values["di"].getValues(di["address"], di["count"])
+            updated_register_values["discrete_input"][index]["value"] = modbus_value
+            index += 1
+        index = 0
+        for hr in register_values["holding_register"]:
+            modbus_value = values["hr"].getValues(hr["address"], hr["count"])
+            updated_register_values["holding_register"][index]["value"] = modbus_value
+            index += 1
+        index = 0
+        for ir in register_values["input_register"]:
+            modbus_value = values["ir"].getValues(ir["address"], ir["count"])
+            updated_register_values["input_register"][index]["value"] = modbus_value
+            index += 1
+        
+        # update register values from the cloned copy
+        register_values["coil"] = updated_register_values["coil"].copy()
+        register_values["discrete_input"] = updated_register_values["discrete_input"].copy()
+        register_values["holding_register"] = updated_register_values["holding_register"].copy()
+        register_values["input_register"] = updated_register_values["input_register"].copy()
+
+        time.sleep(0.2)
+
+
+# FUNCTION: database_interaction
+# PURPOSE:  Starts a process that writes to the SQLite table specific to this actuator.
+#           The values from the dictionary "physical_values" will get written to the
+#           database to simulate the actuator affecting the physical environment.
+def database_interaction(configs, physical_values):
+    # connect to hardware SQLite database
+    conn = sqlite3.connect("physical_interations.db")
+    cursor = conn.cursor()
+    table = configs["database"]["table"]
+
+    while True:
+        # write the actuators physical values to the SQLite database
+        for physical_value in configs["database"]["physical_values"]:
+            cursor.execute(f"""
+                UPDATE {table}
+                SET value = ?
+                WHERE physical_value = ?
+            """, (physical_values[physical_value['name']], physical_value['name']))
+            conn.commit()
+        time.sleep(0.1)
 
 
 # FUNCTION: main
@@ -73,12 +132,6 @@ async def main():
     # retrieve configurations from the given JSON (will be in the same directory)
     configs = retrieve_configs("config.json")
     logging.info("Starting Actuator")
-
-    # create a dictionary to represent the different physical values (for this actuator to write to)
-    physical_values = {}
-    for value in configs["database"]["physical_values"]:
-        # initialise all physical values to just be an empty string (the key matters more)
-        physical_values[value["name"]] = ""
 
     # create slave context
     co = ModbusSequentialDataBlock.create()
@@ -92,26 +145,89 @@ async def main():
     values = {"co": co, "di": di, "hr": hr, "ir": ir}
     server_task = start_servers(configs, context)
 
-    # TODO: make a dictionary "register_values", keys being defined in JSON, values being ints 
+    # create a dictionary to represent the different physical values
+    physical_values = {}
+    for value in configs["database"]["physical_values"]:
+        # initialise all physical values to just be an empty string (the key matters more)
+        physical_values[value["name"]] = ""
+    
+    # create a dictionary to represent the different register values
+    # we do this as we want to abstract the actual modbus registers
+    # a sample of register_values could look like:
+    # "register_values":
+    # {
+    #    "coil": []
+    #    "discrete_input": []
+    #    "holding_register": 
+    #    [
+    #        {
+    #            "address": 170
+    #            "count": 1
+    #            "value": 3013
+    #        }
+    #    ]
+    #    "input_register: []"
+    # }
 
-    # TODO: create a thread that constantly updates "register_values" with the actuator modbus value
+    register_values = {}
+    register_values["coil"] = []
+    register_values["discrete_input"] = []
+    register_values["holding_register"] = []
+    register_values["input_register"] = []
+    for co in configs["values"]["coil"]:
+        register_values["coil"].append(
+            {
+                "address": co["address"],
+                "count": co["count"],
+                "value": False
+            }
+        )
+    for di in configs["values"]["coil"]:
+        register_values["discrete_input"].append(
+            {
+                "address": di["address"],
+                "count": di["count"],
+                "value": False
+            }
+        )
+    for hr in configs["values"]["coil"]:
+        register_values["holding_register"].append(
+            {
+                "address": hr["address"],
+                "count": hr["count"],
+                "value": 0
+            }
+        )
+    for ir in configs["values"]["coil"]:
+        register_values["input_register"].append(
+            {
+                "address": ir["address"],
+                "count": ir["count"],
+                "value": 0
+            }
+        )
 
+    # start a thread to constantly update the "register_values" dictionary with the actual modbus register values
+    sync_register_values = Thread(target=update_register_values, args=(register_values, values))
+    sync_register_values.daemon = True
+    sync_register_values.start()
 
     # start the actuator logic thread
     # the logic will read "register_values" and write to "physical_values"
-    actuator_thread = Thread(target=logic.logic, args=(values, physical_values))
+    actuator_thread = Thread(target=logic.logic, args=(register_values, physical_values, 1))
     actuator_thread.daemon = True
     actuator_thread.start()
     
-
-    # TODO: start actuator database writing thread
     # this thread writes the values of physical_values to the database (so we don't need database queries in the logic)
+    database_thread = Thread(target=database_interaction, args=(configs, physical_values))
+    database_thread.daemon = True
+    database_thread.start()
 
-
-
-    # await tasks
-    actuator_thread.join()
+    # await tasks and threads
     await server_task
+    sync_register_values.join()
+    actuator_thread.join()
+
 
 if __name__ == "__main__":
     asyncio.run(main())

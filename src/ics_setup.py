@@ -31,11 +31,12 @@ def parse_json_to_yaml(json_filename, yaml_filename):
         networks = build_network_yaml(json_content)
         plcs = build_plc_yaml(json_content)
         sensors = build_sensor_yaml(json_content)
+        actuators = build_actuator_yaml(json_content)
         hils = build_hil_yaml(json_content)
 
         # create the YAML file
         parsed_json_content = {
-            "services": plcs | sensors | hils,
+            "services": plcs | sensors | actuators | hils,
             "networks": networks,
         }
 
@@ -73,6 +74,7 @@ def build_network_yaml(json_content):
     
     return json_networks
 
+################################################################################
 
 # FUNCTION: build_plc_yaml
 # PURPOSE:  Builds the section of the YAML file for the PLCs
@@ -161,7 +163,6 @@ def build_sensor_yaml(json_content):
                 comm_port = connection["comm_port"]
                 volumes.append(f"{root_path}/simulation/communications/{comm_port}:/src/{comm_port}")
 
-
         json_sensors[container_name] = {
             "build": build,
             "container_name": container_name,
@@ -171,8 +172,40 @@ def build_sensor_yaml(json_content):
         }
     return json_sensors
 
+
+# FUNCTION: build_actuator_yaml
+# PURPOSE:  Builds the YAML section for the actuators
+def build_actuator_yaml(json_content):
+    root_path = Path(__file__).resolve().parent.parent
+    json_actuators = {}
+
+    for actuator in json_content["actuators"]:
+        build = f"{root_path}/simulation/containers/{actuator['name']}"
+        container_name = actuator["name"]
+        privileged = True
+        
+        # add the SQLite database as a volume in the src/ directory
+        volumes = []
+        volumes.append(f"{root_path}/simulation/communications/physical_interations.db:/src/physical_interations.db")
+
+        # add any virtual serial port to the volumes
+        for connection in actuator["inbound_connections"]:
+            if connection["type"] == "rtu":
+                comm_port = connection["comm_port"]
+                volumes.append(f"{root_path}/simulation/communications/{comm_port}:/src/{comm_port}")
+        
+        json_actuators[container_name] = {
+            "build": build,
+            "container_name": container_name,
+            "privileged": privileged,
+            "volumes": volumes,
+            "command": ["python3", "-u", "actuator.py"]
+        }
+    return json_actuators
+        
+
 # FUNCTION: build_hil_yaml
-# PURPOSE:  Buidsl the section of the YAML file for the physical hardware-in-the-loop
+# PURPOSE:  Builds the section of the YAML file for the physical hardware-in-the-loop
 def build_hil_yaml(json_content):
     root_path = Path(__file__).resolve().parent.parent
     json_hils = {}
@@ -189,22 +222,18 @@ def build_hil_yaml(json_content):
         json_hils[container_name] = {
             "build": build,
             "container_name": container_name,
-            "privileged": True,
+            "privileged": privileged,
             "volumes": volumes,
             "command": ["python3", "-u", "hil.py"]
         }
     return json_hils
 
+################################################################################
 
-# FUNCTION: create_containers
-# PURPOSE:  Builds the directory containers for the main components of the simulation. These
-#           include the PLCs, HMIs, and the sensors and actuators.
-def create_containers(json_content):
+# FUNCTION: build_plc_directory
+# PURPOSE:  Creates the plc directory
+def build_plc_directory(json_content):
     root_path = Path(__file__).resolve().parent.parent
-
-    # delete all existing container directories
-    shutil.rmtree(f"{root_path}/simulation/containers", ignore_errors=True)
-    Path(f"{root_path}/simulation/containers").mkdir()
 
     # create plc directories
     for plc in json_content["plcs"]:
@@ -226,6 +255,11 @@ def create_containers(json_content):
         shutil.copy(f"{root_path}/src/components/plc.py", f"{root_path}/simulation/containers/{plc['name']}/src")
 
 
+# FUNCTION: build_sensor_directory
+# PURPOSE:  Creates the directories for the sensor componenets
+def build_sensor_directory(json_content):
+    root_path = Path(__file__).resolve().parent.parent
+
     # create sensor directories
     for sensor in json_content["sensors"]:
         Path(f"{root_path}/simulation/containers/{sensor['name']}").mkdir()
@@ -245,6 +279,41 @@ def create_containers(json_content):
 
         # copy sensor code
         shutil.copy(f"{root_path}/src/components/sensor.py", f"{root_path}/simulation/containers/{sensor['name']}/src")
+
+
+# FUNCTION: build_actuator_directory
+# PURPOSE:  Creates the directories for the actuator components
+def build_actuator_directory(json_content):
+    root_path = Path(__file__).resolve().parent.parent
+    
+    # create actuator directories
+    for actuator in json_content["actuators"]:
+        Path(f"{root_path}/simulation/containers/{actuator['name']}").mkdir()
+        Path(f"{root_path}/simulation/containers/{actuator['name']}/src").mkdir()
+        shutil.copy(f"{root_path}/src/docker-files/component/Dockerfile", f"{root_path}/simulation/containers/{actuator['name']}")
+
+        # create JSON configuration and write into directory
+        json_config = {
+            "database": {
+                "table": f"{actuator['hil']}",
+                "physical_values": actuator["physical_values"],
+            },
+            "inbound_connections": actuator["inbound_connections"],
+            "values": actuator["values"]
+        }
+        with open(f"{root_path}/simulation/containers/{actuator['name']}/src/config.json", "w") as conf_file:
+            conf_file.write(json.dumps(json_config, indent=4))
+
+        # copy actuator code and logic
+        logic_file = actuator["logic"]
+        shutil.copy(f"{root_path}/logic/{logic_file}", f"{root_path}/simulation/containers/{actuator['name']}/src/logic.py")
+        shutil.copy(f"{root_path}/src/components/actuator.py", f"{root_path}/simulation/containers/{actuator['name']}/src")
+
+
+# FUNCTION: build_hil_directory
+# PURPOSE:  Creates the hardware-in-the-loop directories
+def build_hil_directory(json_content):
+    root_path = Path(__file__).resolve().parent.parent
 
     # create hil directories
     for hil in json_content["hils"]:
@@ -266,6 +335,24 @@ def create_containers(json_content):
         shutil.copy(f"{root_path}/logic/{logic_file}", f"{root_path}/simulation/containers/{hil['name']}/src/logic.py")
         shutil.copy(f"{root_path}/src/components/hil.py", f"{root_path}/simulation/containers/{hil['name']}/src")
 
+
+# FUNCTION: create_containers
+# PURPOSE:  Builds the directory containers for the main components of the simulation. These
+#           include the PLCs, HMIs, and the sensors and actuators.
+def create_containers(json_content):
+    root_path = Path(__file__).resolve().parent.parent
+
+    # delete all existing container directories
+    shutil.rmtree(f"{root_path}/simulation/containers", ignore_errors=True)
+    Path(f"{root_path}/simulation/containers").mkdir()
+
+    # create directories for all component containers
+    build_plc_directory(json_content)
+    build_sensor_directory(json_content)
+    build_actuator_directory(json_content)
+    build_hil_directory(json_content)
+    
+    
 
 # FUNCTION: create_communications
 # PURPOSE:  Builds the directory used for communications. This directory holds the SQLite database

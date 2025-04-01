@@ -21,6 +21,17 @@ services:
     - python3
     - -u
     - sensor.py
+  transfer_switch:
+    build: /home/jaxson/Documents/IndustrialControlSystems/ICS-SimLab/simulation/containers/transfer_switch
+    container_name: transfer_switch
+    privileged: true
+    volumes:
+    - /home/jaxson/Documents/IndustrialControlSystems/ICS-SimLab/simulation/communications/physical_interations.db:/src/physical_interations.db
+    - /home/jaxson/Documents/IndustrialControlSystems/ICS-SimLab/simulation/communications/ttyS4:/src/ttyS4
+    command:
+    - python3
+    - -u
+    - actuator.py
   electrical_hil:
     build: /home/jaxson/Documents/IndustrialControlSystems/ICS-SimLab/simulation/containers/electrical_hil
     container_name: electrical_hil
