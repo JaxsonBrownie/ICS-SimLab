@@ -77,7 +77,7 @@ def start_sensor(configs, values):
             conn.commit()
 
             if value and value[0] != "":
-                values["co"].setValues(address+1, int(value[0]))
+                values["co"].setValues(address+1, int(float(value[0])))
         for di in configs["values"]["discrete_input"]:
             address = di["address"]
 
@@ -86,7 +86,7 @@ def start_sensor(configs, values):
             conn.commit()
 
             if value and value[0] != "":
-                values["di"].setValues(address+1, int(value[0]))
+                values["di"].setValues(address+1, int(float(value[0])))
         for hr in configs["values"]["holding_register"]:
             address = hr["address"]
 
@@ -95,7 +95,7 @@ def start_sensor(configs, values):
             conn.commit()
 
             if value and value[0] != "":
-                values["hr"].setValues(address+1, int(value[0]))
+                values["hr"].setValues(address+1, int(float(value[0])))
         for ir in configs["values"]["input_register"]:
             address = ir["address"]
 
@@ -104,7 +104,7 @@ def start_sensor(configs, values):
             conn.commit()
 
             if value and value[0] != "":
-                values["ir"].setValues(address+1, int(value[0]))
+                values["ir"].setValues(address+1, int(float(value[0])))
 
         time.sleep(0.2)
 

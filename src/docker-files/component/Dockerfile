@@ -9,8 +9,8 @@ RUN apt-get install -y python3 \
 
 RUN pip3 install pymodbus
 RUN pip3 install pyserial
+RUN pip3 install numpy
 #RUN pip3 install scipy
-#RUN pip3 install numpy
 #RUN pip3 install flask
 #RUN pip3 install flask-cors
 

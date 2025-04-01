@@ -16,13 +16,18 @@
                 {
                     "type": "rtu",
                     "comm_port": "ttyS3",
-                    "id": "transfer_switch"
+                    "id": "ts_con"
                 }
             ],
             "values":
             {
                 "coil":
                 [
+                    {
+                        "address": 200,
+                        "count": 1,
+                        "id": "transfer_switch_state"
+                    }
                 ],
                 "discrete_input":
                 [
@@ -49,6 +54,18 @@
                     "address": 100,
                     "count": 1,
                     "interval": 1
+                }
+            ],
+            "controllers":
+            [
+                {
+                   "outbound_connection_id": "ts_con",
+                   "id": "transfer_switch_state",
+                   "value_type": "coil",
+                   "slave_id": 2,
+                   "address": 11,
+                   "count": 1,
+                   "interval": 1
                 }
             ]
         }

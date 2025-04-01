@@ -66,9 +66,6 @@ async def start_servers(configs, context):
 # PURPOSE:  Updates the "register_values" dictionary with the register values of the modbus server,
 #           which is in the "values" dictionary.
 def update_register_values(register_values, values):
-
-    print(register_values)
-
     while True:
         # create a clone dictionary to hold the "to-be-updated" values
         updated_register_values = register_values.copy()
@@ -76,22 +73,22 @@ def update_register_values(register_values, values):
         # update the cloned copy with the real modbus values
         index = 0
         for co in register_values["coil"]:
-            modbus_value = values["co"].getValues(co["address"], co["count"])
+            modbus_value = values["co"].getValues(co["address"], co["count"])[0]
             updated_register_values["coil"][index]["value"] = modbus_value
             index += 1
         index = 0
         for di in register_values["discrete_input"]:
-            modbus_value = values["di"].getValues(di["address"], di["count"])
+            modbus_value = values["di"].getValues(di["address"], di["count"])[0]
             updated_register_values["discrete_input"][index]["value"] = modbus_value
             index += 1
         index = 0
         for hr in register_values["holding_register"]:
-            modbus_value = values["hr"].getValues(hr["address"], hr["count"])
+            modbus_value = values["hr"].getValues(hr["address"], hr["count"])[0]
             updated_register_values["holding_register"][index]["value"] = modbus_value
             index += 1
         index = 0
         for ir in register_values["input_register"]:
-            modbus_value = values["ir"].getValues(ir["address"], ir["count"])
+            modbus_value = values["ir"].getValues(ir["address"], ir["count"])[0]
             updated_register_values["input_register"][index]["value"] = modbus_value
             index += 1
         
@@ -212,6 +209,7 @@ async def main():
     sync_register_values.daemon = True
     sync_register_values.start()
 
+    # TODO: investigate if the actuator even needs logic
     # start the actuator logic thread
     # the logic will read "register_values" and write to "physical_values"
     actuator_thread = Thread(target=logic.logic, args=(register_values, physical_values, 1))
