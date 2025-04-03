@@ -29,7 +29,8 @@ def retrieve_configs(filename):
 
 
 # FUNCTION: database_interaction
-# PURPOSE:  Handles writing the physical values into the SQLite database
+# PURPOSE:  Handles writing the physical values into the SQLite database. Only used with output
+#           interactions.
 def database_interaction(configs, physical_values):
     # connect to hardware SQLite database
     conn = sqlite3.connect("physical_interations.db")
@@ -38,13 +39,39 @@ def database_interaction(configs, physical_values):
 
     while True:
         for physical_value in configs["database"]["physical_values"]:
-            cursor.execute(f"""
-                UPDATE {table}
-                SET value = ?
-                WHERE physical_value = ?
-            """, (physical_values[physical_value['name']], physical_value['name']))
-            conn.commit()
+            if physical_value["io"] == "output":
+                cursor.execute(f"""
+                    UPDATE {table}
+                    SET value = ?
+                    WHERE physical_value = ?
+                """, (physical_values[physical_value['name']], physical_value['name']))
+                conn.commit()
         time.sleep(0.1)
+
+
+# FUNCTION: monitor_physical_inputs
+# PURPOSE:  Monitors physical database interactions for input interactions.
+def monitor_physical_inputs(configs, physical_values):
+    # connect to hardware SQLite database
+    conn = sqlite3.connect("physical_interations.db")
+    cursor = conn.cursor()
+    table = configs["database"]["table"]
+
+    while True:
+        for physical_value in configs["database"]["physical_values"]:
+            if physical_value["io"] == "input":
+                cursor.execute(f"""
+                    SELECT value
+                    FROM {table}
+                    WHERE physical_value = ?
+                """, (physical_value['name'],))
+                value = cursor.fetchone()
+                conn.commit()
+
+                if value and value[0] != "":
+                    physical_values[physical_value['name']] = int(float(value[0]))
+        time.sleep(0.1)
+
 
 # FUNCTION: main
 # PURPOSE:  The main execution
@@ -58,19 +85,25 @@ async def main():
         # initialise all physical values to just be an empty string (the key matters more)
         physical_values[value["name"]] = ""
 
-    # begin physical simulation thread
-    sensor_sim_thread = Thread(target=logic.logic, args=(physical_values, 1))
-    sensor_sim_thread.daemon = True
-    sensor_sim_thread.start()
+    # begin physical logic simulation thread
+    logic_thread = Thread(target=logic.logic, args=(physical_values, 0.2))
+    logic_thread.daemon = True
+    logic_thread.start()
 
-    # begin the database writing thread
-    database_thread = Thread(target=database_interaction, args=(configs, physical_values))
-    database_thread.daemon = True
-    database_thread.start()
+    # begin the database output writing thread
+    db_in_thread = Thread(target=database_interaction, args=(configs, physical_values))
+    db_in_thread.daemon = True
+    db_in_thread.start()
+
+    # begin database input reading thread
+    db_out_thread = Thread(target=monitor_physical_inputs, args=(configs, physical_values))
+    db_out_thread.daemon = True
+    db_out_thread.start()
 
     # wait for threads
-    sensor_sim_thread.join()
-    database_thread.join()
+    logic_thread.join()
+    db_in_thread.join()
+    db_out_thread.join()
     
 
 if __name__ == "__main__":

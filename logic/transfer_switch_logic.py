@@ -5,16 +5,15 @@ import time
 def logic(register_values, physical_values, interval):
     # initial values
     physical_values["transfer_switch_state"] = False
+    transfer_switch_state = False
     
     while True:
         # find the right register for the transfer switch
-        for register in register_values["input_register"]:
-            if register.get("address") == 100:
-                transfer_switch_state = register.get("value")
+        for register in register_values["coil"]:
+            if register["address"] == 100:
+                transfer_switch_state = register["value"]
 
         # set the physical hil
-        #physical_values["transfer_switch_state"] = transfer_switch_state
-        physical_values["transfer_switch_state"] = not physical_values["transfer_switch_state"]
+        physical_values["transfer_switch_state"] = transfer_switch_state
 
-
-        time.sleep(interval)
+        time.sleep(0.1)

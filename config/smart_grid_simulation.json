@@ -3,6 +3,7 @@
     [
         {
             "name": "ats_plc",
+            "logic": "ats_plc_logic.py",
             "inbound_connections":
             [
             ],
@@ -26,6 +27,7 @@
                     {
                         "address": 200,
                         "count": 1,
+                        "io": "output",
                         "id": "transfer_switch_state"
                     }
                 ],
@@ -40,6 +42,7 @@
                     {
                         "address": 100,
                         "count": 1,
+                        "io": "input",
                         "id": "solar_panel_reading"
                     }
                 ]
@@ -63,7 +66,7 @@
                    "id": "transfer_switch_state",
                    "value_type": "coil",
                    "slave_id": 2,
-                   "address": 11,
+                   "address": 100,
                    "count": 1,
                    "interval": 1
                 }
@@ -159,13 +162,16 @@
             "physical_values":
             [
                 {
-                    "name": "solar_power"
+                    "name": "solar_power",
+                    "io": "output"
                 },
                 {
-                    "name": "transfer_switch_state"
+                    "name": "transfer_switch_state",
+                    "io": "input"
                 },
                 {
-                    "name": "input_power"
+                    "name": "input_power",
+                    "io": "output"
                 }
             ]
         }

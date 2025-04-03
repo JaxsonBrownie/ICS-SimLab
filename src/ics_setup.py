@@ -246,12 +246,15 @@ def build_plc_directory(json_content):
             "inbound_connections": plc["inbound_connections"],
             "outbound_connections": plc["outbound_connections"],
             "values": plc["values"],
-            "monitors": plc["monitors"]
+            "monitors": plc["monitors"],
+            "controllers": plc["controllers"]
         }
         with open(f"{root_path}/simulation/containers/{plc['name']}/src/config.json", "w") as conf_file:
             conf_file.write(json.dumps(json_config, indent=4))
 
-        # copy PLC code
+        # copy PLC code and logic file
+        logic_file = plc["logic"]
+        shutil.copy(f"{root_path}/logic/{logic_file}", f"{root_path}/simulation/containers/{plc['name']}/src/logic.py")
         shutil.copy(f"{root_path}/src/components/plc.py", f"{root_path}/simulation/containers/{plc['name']}/src")
 
 
@@ -353,7 +356,6 @@ def create_containers(json_content):
     build_hil_directory(json_content)
     
     
-
 # FUNCTION: create_communications
 # PURPOSE:  Builds the directory used for communications. This directory holds the SQLite database
 #           and the virtual serial ports, which are created using socat.
