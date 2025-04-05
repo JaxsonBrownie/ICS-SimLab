@@ -100,28 +100,28 @@ def init_outbound_cons(configs):
 
 # FUNCTION: monitor
 # PURPOSE:  A monitor thread to continuously read data from a defined and intialised connection
-def monitor(monitor_configs, modbus_con, values):
+def monitor(value_config, monitor_configs, modbus_con, values):
     print(f"Starting monitor: {monitor_configs['id']}")
     interval = monitor_configs["interval"]
     value_type = monitor_configs["value_type"]
-    address = monitor_configs["address"]
+    out_address = monitor_configs["address"]
     count = monitor_configs["count"]
 
     while True:
         try:
             # select the correct function
             if value_type == "coil":
-                response_values = modbus_con.read_coils(address, count).bits
-                values["co"].setValues(address, response_values)
+                response_values = modbus_con.read_coils(out_address, count).bits
+                values["co"].setValues(value_config["address"], response_values)
             elif value_type == "discrete_input":
-                response_values = modbus_con.read_discrete_inputs(address, count).bits
-                values["di"].setValues(address, response_values)
+                response_values = modbus_con.read_discrete_inputs(out_address, count).bits
+                values["di"].setValues(value_config["address"], response_values)
             elif value_type == "holding_register":
-                response_values = modbus_con.read_holding_registers(address, count).registers
-                values["hr"].setValues(address, response_values)
+                response_values = modbus_con.read_holding_registers(out_address, count).registers
+                values["hr"].setValues(value_config["address"], response_values)
             elif value_type == "input_register":
-                response_values = modbus_con.read_input_registers(address, count).registers
-                values["ir"].setValues(address, response_values)
+                response_values = modbus_con.read_input_registers(out_address, count).registers
+                values["ir"].setValues(value_config["address"], response_values)
         except:
             print("Error: couldn't read values")
 
@@ -138,8 +138,27 @@ def start_monitors(configs, outbound_cons, values):
         outbound_con_id = monitor_config["outbound_connection_id"]
         modbus_con = outbound_cons[outbound_con_id]
 
+        # get the address of the internal register to write to
+        value_config = {}
+        if monitor_config["value_type"] == "coil":
+            for co in configs["values"]["coil"]:
+                if co["id"] == monitor_config["id"]:
+                    value_config = co
+        elif monitor_config["value_type"] == "discrete_input":
+            for di in configs["values"]["discrete_input"]:
+                if di["id"] == monitor_config["id"]:
+                    value_config = di
+        elif monitor_config["value_type"] == "holding_register":
+            for hr in configs["values"]["holding_register"]:
+                if hr["id"] == monitor_config["id"]:
+                    value_config = hr
+        elif monitor_config["value_type"] == "input_register":
+            for ir in configs["values"]["input_register"]:
+                if ir["id"] == monitor_config["id"]:
+                    value_config = ir
+
         # start the monitor threads
-        monitor_thread = Thread(target=monitor, args=(monitor_config, modbus_con, values))
+        monitor_thread = Thread(target=monitor, args=(value_config, monitor_config, modbus_con, values))
         monitor_thread.daemon = True
         monitor_thread.start()
 

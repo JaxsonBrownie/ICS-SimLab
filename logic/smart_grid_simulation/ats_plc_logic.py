@@ -9,10 +9,10 @@ def logic(input_registers, output_registers, state_update_callbacks):
 
     while True:
         # get the solar panel power meter value reference
-        sp_pm_value = next((i for i in input_registers["input_register"] if i["address"] == 100), None)
+        sp_pm_value = next((i for i in input_registers["input_register"] if i["address"] == 30), None)
 
         # get the transfer switch output value reference
-        ts_value = next((i for i in output_registers["coil"] if i["address"] == 200), None)
+        ts_value = next((i for i in output_registers["coil"] if i["address"] == 10), None)
         
         if sp_pm_prev != sp_pm_value["value"]:
             print(f"SOLAR PANEL POWER METER READING: {sp_pm_value['value']}")

@@ -10,7 +10,7 @@ def logic(register_values, physical_values, interval):
     while True:
         # find the right register for the transfer switch
         for register in register_values["coil"]:
-            if register["address"] == 100:
+            if register["address"] == 2:
                 transfer_switch_state = register["value"]
 
         # set the physical hil
