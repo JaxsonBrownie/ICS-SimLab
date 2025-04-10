@@ -1,4 +1,4 @@
-FROM ubuntu:20.04
+FROM ubuntu:20.04@sha256:9ad52fdb4654bb6f0ac2e76e4fb5f12a53c713a656ef0cb1aaa18d3eca378748
 
 # Update
 RUN apt-get update
@@ -10,6 +10,7 @@ RUN apt-get install -y python3 \
 RUN pip3 install pymodbus
 RUN pip3 install pyserial
 RUN pip3 install numpy
+RUN pip3 install flask
 #RUN pip3 install scipy
 #RUN pip3 install flask
 #RUN pip3 install flask-cors

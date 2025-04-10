@@ -1,4 +1,20 @@
 services:
+  ui:
+    build: /home/jaxson/Documents/IndustrialControlSystems/ICS-SimLab/simulation/containers/ui
+    container_name: ui
+    privileged: true
+    ports:
+    - 8501
+    - 1111
+    command:
+    - streamlit
+    - run
+    - ui.py
+    - --server.port=8501
+    - --server.address=0.0.0.0
+    networks:
+      vlan1:
+        ipv4_address: 192.168.0.2
   ats_plc:
     build: /home/jaxson/Documents/IndustrialControlSystems/ICS-SimLab/simulation/containers/ats_plc
     container_name: ats_plc
@@ -10,6 +26,12 @@ services:
     volumes:
     - /home/jaxson/Documents/IndustrialControlSystems/ICS-SimLab/simulation/communications/ttyS1:/src/ttyS1
     - /home/jaxson/Documents/IndustrialControlSystems/ICS-SimLab/simulation/communications/ttyS3:/src/ttyS3
+    networks:
+      vlan1:
+        ipv4_address: 192.168.0.20
+    ports:
+    - 1111
+    - 5020
   solar_panel_power_meter:
     build: /home/jaxson/Documents/IndustrialControlSystems/ICS-SimLab/simulation/containers/solar_panel_power_meter
     container_name: solar_panel_power_meter
@@ -21,6 +43,12 @@ services:
     - python3
     - -u
     - sensor.py
+    networks:
+      vlan1:
+        ipv4_address: 192.168.0.10
+    ports:
+    - 1111
+    - 5020
   transfer_switch:
     build: /home/jaxson/Documents/IndustrialControlSystems/ICS-SimLab/simulation/containers/transfer_switch
     container_name: transfer_switch
@@ -32,6 +60,12 @@ services:
     - python3
     - -u
     - actuator.py
+    networks:
+      vlan1:
+        ipv4_address: 192.168.0.11
+    ports:
+    - 1111
+    - 5020
   electrical_hil:
     build: /home/jaxson/Documents/IndustrialControlSystems/ICS-SimLab/simulation/containers/electrical_hil
     container_name: electrical_hil

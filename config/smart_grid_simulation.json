@@ -1,9 +1,24 @@
 {
+    "ui":
+    {
+        "network":
+        {
+            "ip": "192.168.0.2",
+            "port": 8501,
+            "docker_network": "vlan1"
+        }
+    },
+
     "plcs":
     [
         {
             "name": "ats_plc",
             "logic": "smart_grid_simulation/ats_plc_logic.py",
+            "network": 
+            {
+                "ip": "192.168.0.20",
+                "docker_network": "vlan1"
+            },
             "inbound_connections":
             [
             ],
@@ -79,6 +94,11 @@
         {
             "name": "solar_panel_power_meter",
             "hil": "electrical_hil",
+            "network": 
+            {
+                "ip": "192.168.0.10",
+                "docker_network": "vlan1"
+            },
             "inbound_connections":
             [
                 {
@@ -117,6 +137,11 @@
             "name": "transfer_switch",
             "logic": "smart_grid_simulation/transfer_switch_logic.py",
             "hil": "electrical_hil",
+            "network": 
+            {
+                "ip": "192.168.0.11",
+                "docker_network": "vlan1"
+            },
             "inbound_connections":
             [
                 {

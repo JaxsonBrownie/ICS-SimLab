@@ -8,11 +8,17 @@ import json
 import asyncio
 import time
 import sqlite3
+from flask import Flask, jsonify
 from threading import Thread
 from pymodbus.server import ModbusTcpServer, ModbusSerialServer
 from pymodbus.datastore import ModbusSequentialDataBlock, ModbusSlaveContext, ModbusServerContext
 
 logging.basicConfig(level=logging.INFO, format='%(levelname)s - %(message)s')
+
+app = Flask(__name__)
+
+# global variables (only used for endpoints)
+register_values = {}
 
 # here we import the defined logic
 # the logic will always be in a python file called logic.py, which gets copied to the container
@@ -180,10 +186,21 @@ def create_register_values_dict(configs):
         )
     return register_values
 
+# define the flask endpoint
+@app.route("/registers", methods=['GET'])
+def get_registers_route():
+    global register_values
+    return jsonify(register_values)
+
+# define function to run flask in another thread
+def flask_app(flask_app):
+    flask_app.run(host="0.0.0.0", port=1111)
 
 # FUNCTION: main
 # PURPOSE:  Main execution
 async def main():
+    global register_values
+    
     # retrieve configurations from the given JSON (will be in the same directory)
     configs = retrieve_configs("config.json")
     logging.info("Starting Actuator")
@@ -224,14 +241,21 @@ async def main():
     actuator_thread.start()
     
     # this thread writes the values of physical_values to the database (so we don't need database queries in the logic)
-    database_thread = Thread(target=database_interaction, args=(configs, physical_values))
-    database_thread.daemon = True
-    database_thread.start()
+    logic_thread = Thread(target=database_interaction, args=(configs, physical_values))
+    logic_thread.daemon = True
+    logic_thread.start()
+
+    # start the flask endpoint
+    flask_thread = Thread(target=flask_app, args=(app,))
+    flask_thread.daemon = True
+    flask_thread.start()
 
     # await tasks and threads
     await server_task
     sync_register_values.join()
     actuator_thread.join()
+    logic_thread.join()
+    flask_thread.join()
 
 
 if __name__ == "__main__":

@@ -8,6 +8,7 @@ import json
 import asyncio
 import time
 import logging
+from flask import Flask, jsonify
 from threading import Thread
 from pymodbus.client import ModbusTcpClient, ModbusSerialClient
 from pymodbus.server import ModbusTcpServer, ModbusSerialServer, StartSerialServer, StartTcpServer
@@ -15,6 +16,11 @@ from pymodbus.datastore import ModbusSequentialDataBlock, ModbusSlaveContext, Mo
 from pymodbus.exceptions import ModbusIOException
 
 logging.basicConfig(level=logging.INFO, format='%(levelname)s - %(message)s')
+
+app = Flask(__name__)
+
+# global variables (only used for endpoints)
+register_values = {}
 
 # here we import the defined logic
 # the logic will always be in a python file called logic.py, which gets copied to the container
@@ -168,7 +174,6 @@ def start_monitors(configs, outbound_cons, values):
 # FUNCTION: get_controller_callbacks
 # PURPOSE:  Returns a dictionary of callbacks to be used to write to 
 #           write to their specific register.
-# TODO: may get broken stuff because "reference vs values"
 def get_controller_callbacks(configs, outbound_cons, output_reg_values):
     controller_callbacks = {}
     for controller_config in configs["controllers"]:
@@ -354,9 +359,21 @@ def separate_io_registers(register_values):
     return input_registers, output_registers
 
 
+# define the flask endpoint
+@app.route("/registers", methods=['GET'])
+def get_registers_route():
+    global register_values
+    return jsonify(register_values)
+
+# define function to run flask in another thread
+def flask_app(flask_app):
+    flask_app.run(host="0.0.0.0", port=1111)
+
 # FUNCTION: main
 # PURPOSE:  The main execution
 async def main():
+    global register_values
+
     # retrieve configurations from the given JSON (will be in the same directory)
     configs = retrieve_configs("config.json")
     logging.info(f"Starting PLC")
@@ -398,6 +415,11 @@ async def main():
     logic_thread = Thread(target=logic.logic, args=(input_reg_values, output_reg_values, controller_callbacks))
     logic_thread.daemon = True
     logic_thread.start()
+    
+    # start the flask endpoint
+    flask_thread = Thread(target=flask_app, args=(app,))
+    flask_thread.daemon = True
+    flask_thread.start()
 
     # block on the inbound connection servers and outbound monitors
     await inbound_cons
@@ -405,6 +427,7 @@ async def main():
         monitor_thread.join()
     logic_thread.join()
     sync_in_registers.join()
+    flask_thread.join()
 
     # close all outbound client connections
     for outbound_con in outbound_cons.values():

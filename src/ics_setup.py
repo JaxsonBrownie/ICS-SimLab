@@ -29,6 +29,7 @@ def parse_json_to_yaml(json_filename, yaml_filename):
 
         # create all sections for the YAML file
         networks = build_network_yaml(json_content)
+        ui = build_ui_yaml(json_content)
         plcs = build_plc_yaml(json_content)
         sensors = build_sensor_yaml(json_content)
         actuators = build_actuator_yaml(json_content)
@@ -36,7 +37,7 @@ def parse_json_to_yaml(json_filename, yaml_filename):
 
         # create the YAML file
         parsed_json_content = {
-            "services": plcs | sensors | actuators | hils,
+            "services": ui | plcs | sensors | actuators | hils,
             "networks": networks,
         }
 
@@ -73,6 +74,33 @@ def build_network_yaml(json_content):
         }
     
     return json_networks
+
+
+# FUNCTION: build_ui_yaml
+# PURPOSE:  Builds the UI yaml
+def build_ui_yaml(json_content):
+    root_path = Path(__file__).resolve().parent.parent
+    json_ui = {}
+
+    # extract basic docker configuration
+    build = f"{root_path}/simulation/containers/ui"
+    ip = json_content["ui"]["network"]["ip"]
+    port = json_content["ui"]["network"]["port"]
+    docker_network = json_content["ui"]["network"]["docker_network"]
+    privileged = True
+
+    json_ui["ui"] = {
+        "build": build,
+        "container_name": "ui",
+        "privileged": privileged,
+        "ports": [port, 1111],
+        "command": ["streamlit", "run", "ui.py", f"--server.port={port}", "--server.address=0.0.0.0"],
+    }
+    json_ui["ui"]["networks"] = {}
+    json_ui["ui"]["networks"][docker_network] = {}
+    json_ui["ui"]["networks"][docker_network]["ipv4_address"] = ip
+
+    return json_ui
 
 ################################################################################
 
@@ -139,6 +167,17 @@ def build_plc_yaml(json_content):
                     f"{root_path}/simulation/communications/{comm_port}:/src/{comm_port}"
                 )
 
+        # add ip address
+        ip = plc["network"]["ip"]
+        docker_network = plc["network"]["docker_network"]
+        json_plcs[container_name]["networks"] = {}
+        json_plcs[container_name]["networks"][docker_network] = {}
+        json_plcs[container_name]["networks"][docker_network]["ipv4_address"] = ip
+
+        # export ports (1111 for UI, 5020 for modbus)
+        json_plcs[container_name]["ports"] = []
+        json_plcs[container_name]["ports"].append(1111)
+        json_plcs[container_name]["ports"].append(5020)
     return json_plcs
 
 
@@ -170,6 +209,18 @@ def build_sensor_yaml(json_content):
             "volumes": volumes,
             "command": ["python3", "-u", "sensor.py"]
         }
+
+        # add ip address
+        ip = sensor["network"]["ip"]
+        docker_network = sensor["network"]["docker_network"]
+        json_sensors[container_name]["networks"] = {}
+        json_sensors[container_name]["networks"][docker_network] = {}
+        json_sensors[container_name]["networks"][docker_network]["ipv4_address"] = ip
+
+        # export ports (1111 for UI, 5020 for modbus)
+        json_sensors[container_name]["ports"] = []
+        json_sensors[container_name]["ports"].append(1111)
+        json_sensors[container_name]["ports"].append(5020)
     return json_sensors
 
 
@@ -201,6 +252,18 @@ def build_actuator_yaml(json_content):
             "volumes": volumes,
             "command": ["python3", "-u", "actuator.py"]
         }
+
+        # add ip address
+        ip = actuator["network"]["ip"]
+        docker_network = actuator["network"]["docker_network"]
+        json_actuators[container_name]["networks"] = {}
+        json_actuators[container_name]["networks"][docker_network] = {}
+        json_actuators[container_name]["networks"][docker_network]["ipv4_address"] = ip
+
+        # export ports (1111 for UI, 5020 for modbus)
+        json_actuators[container_name]["ports"] = []
+        json_actuators[container_name]["ports"].append(1111)
+        json_actuators[container_name]["ports"].append(5020)
     return json_actuators
         
 
@@ -229,6 +292,22 @@ def build_hil_yaml(json_content):
     return json_hils
 
 ################################################################################
+
+# FUNCTION: build_ui_directory
+# PURPOSE:  Creates the ui directory
+def build_ui_directory(json_content):
+    root_path = Path(__file__).resolve().parent.parent
+    Path(f"{root_path}/simulation/containers/ui").mkdir()
+    Path(f"{root_path}/simulation/containers/ui/src").mkdir()
+    shutil.copy(f"{root_path}/src/docker-files/ui/Dockerfile", f"{root_path}/simulation/containers/ui")
+
+    # copy the whole json config into the container
+    with open(f"{root_path}/simulation/containers/ui/src/config.json", "w") as conf_file:
+        conf_file.write(json.dumps(json_content, indent=4))
+
+    # copy ui code
+    shutil.copy(f"{root_path}/src/components/ui.py", f"{root_path}/simulation/containers/ui/src")
+
 
 # FUNCTION: build_plc_directory
 # PURPOSE:  Creates the plc directory
@@ -350,6 +429,7 @@ def create_containers(json_content):
     Path(f"{root_path}/simulation/containers").mkdir()
 
     # create directories for all component containers
+    build_ui_directory(json_content)
     build_plc_directory(json_content)
     build_sensor_directory(json_content)
     build_actuator_directory(json_content)
