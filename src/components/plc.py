@@ -104,6 +104,7 @@ def init_outbound_cons(configs):
             connections[connection["id"]] = client
     return connections
 
+
 # FUNCTION: monitor
 # PURPOSE:  A monitor thread to continuously read data from a defined and intialised connection
 def monitor(value_config, monitor_configs, modbus_con, values):

@@ -104,9 +104,13 @@ async def main():
         # retrieve configurations from the given JSON (will be in the same directory)
         configs = retrieve_configs("config.json")
 
-        # get all component info (name: ip)
+        # get all TCP/IP component info (name: ip)
         plc_info, sensor_info, actuator_info = get_component_info(configs)
         st.session_state['config_loaded'] = True
+
+        # get the physical components (SQLite3)
+        #TODO:
+
 
     # render everything first  
     st.title("Industrial Control System Dashboard")
@@ -116,37 +120,75 @@ async def main():
     st.write(f"Number of Sensors: {len(sensor_info)}")
     st.write(f"Number of Actuators: {len(actuator_info)}")
 
+    st.divider()
     st.header("Programmable Logic Controllers")
+    st.subheader("Input + Output Registers")
     plcs = {}
     for plc in plc_info:
         plcs[plc["name"]] = st.empty() 
 
+    st.divider()
     st.header("Sensors")
+    st.subheader("Input Registers")
     sensors = {}
     for sensor in sensor_info:
         sensors[sensor["name"]] = st.empty()  
     
-    st.header("Actuators")  
+    st.divider()
+    st.header("Actuators") 
+    st.subheader("Output Registers") 
     actuators = {}
     for actuator in actuator_info:
         actuators[actuator["name"]] = st.empty() 
 
     # have a single event loop for API polling (streamlit sucks for multi threaded stuff)
     while True:
+        # poll plc
         for plc in plc_info:
             plc_response = requests.get(f"http://{plc['ip']}:1111/registers").json()
             plc_table = create_table(plc_response)
-            plcs[plc["name"]].table(plc_table)
+            plcs[plc["name"]].dataframe(
+                plc_table,
+                column_config={
+                    "type": st.column_config.TextColumn("Type", width="medium"),
+                    "value": st.column_config.Column("Value", width="medium"),
+                    "address": st.column_config.NumberColumn("Address", width="medium"),
+                    "count": st.column_config.NumberColumn("Count", width="medium"),
+                },
+                use_container_width=False
+            )
 
+        # poll sensor
         for sensor in sensor_info:
             sensor_response = requests.get(f"http://{sensor['ip']}:1111/registers").json()
             sensor_table = create_table(sensor_response)
-            sensors[sensor["name"]].table(sensor_table)
+            sensors[sensor["name"]].dataframe(
+                sensor_table,
+                column_config={
+                    "type": st.column_config.TextColumn("Type", width="medium"),
+                    "value": st.column_config.Column("Value", width="medium"),
+                    "address": st.column_config.NumberColumn("Address", width="medium"),
+                    "count": st.column_config.NumberColumn("Count", width="medium"),
+                },
+                use_container_width=False
+            )
 
+        # poll actuator
         for actuator in actuator_info:
             actuator_response = requests.get(f"http://{actuator['ip']}:1111/registers").json()
             actuator_table = create_table(actuator_response)
-            actuators[actuator["name"]].table(actuator_table)
+            actuators[actuator["name"]].dataframe(
+                actuator_table,
+                column_config={
+                    "type": st.column_config.TextColumn("Type", width="medium"),
+                    "value": st.column_config.Column("Value", width="medium"),
+                    "address": st.column_config.NumberColumn("Address", width="medium"),
+                    "count": st.column_config.NumberColumn("Count", width="medium"),
+                },
+                use_container_width=False
+            )
+
+        # poll the physical
 
         time.sleep(1)
 
