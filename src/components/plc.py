@@ -435,8 +435,8 @@ async def main():
     # start a thread to continously update the input and output registers dictionaries
     sync_in_registers = Thread(target=update_register_values, args=(input_reg_values, values), daemon=True)
     sync_in_registers.start()
-    sync_out_registers = Thread(target=update_register_values, args=(output_reg_values, values), daemon=True)
-    sync_out_registers.start()
+    #sync_out_registers = Thread(target=update_register_values, args=(output_reg_values, values), daemon=True)
+    #sync_out_registers.start()
 
     # start the logic thread, passing in the input registers, output registers, and modbus controlling callback functions
     logic_thread = Thread(target=logic.logic, args=(input_reg_values, output_reg_values, controller_callbacks), daemon=True)
@@ -454,7 +454,7 @@ async def main():
         outbound_con.close()
     logic_thread.join()
     sync_in_registers.join()
-    sync_out_registers.join()
+    #sync_out_registers.join()
     flask_thread.join()
     
     # block (useful if no servers or monitors are made)

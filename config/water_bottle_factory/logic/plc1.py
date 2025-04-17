@@ -16,7 +16,6 @@ def logic(input_registers, output_registers, state_update_callbacks):
 
     # wait for the first sync to happen
     time.sleep(2)
-    print(state_update_callbacks)
 
     # create mapping logic
     while True:

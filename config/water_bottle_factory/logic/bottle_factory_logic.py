@@ -20,12 +20,6 @@ def logic(physical_values, interval):
     # block
     tank_thread.join()
 
-# define behaviour for the tank level
-#def tank_level_value_thread(physical_values):
-#    while True:
-#        physical_values["tank_level_value"] -= 3
-#        time.sleep(0.5)
-
 # define behaviour for the valves and tank level
 def tank_valves_thread(physical_values):
     while True:

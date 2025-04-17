@@ -100,6 +100,96 @@
                     "interval": 1
                 }
             ]
+        },
+        {
+            "name": "plc2",
+            "logic": "plc2.py",
+            "network":
+            {
+                "ip": "192.168.0.22",
+                "docker_network": "vlan1"
+            },
+            "inbound_connections": [],
+            "outbound_connections":
+            [
+                {
+                    "type": "rtu",
+                    "comm_port": "ttyS7",
+                    "id": "bottle_level_sensor_con"
+                },
+                {
+                    "type": "rtu",
+                    "comm_port": "ttyS9",
+                    "id": "bottle_distance_con"
+                },
+                {
+                    "type": "rtu",
+                    "comm_port": "ttyS11",
+                    "id": "conveyor_belt_con"
+                }
+            ],
+            "values":
+            {
+                "coil":
+                [
+                    {
+                        "address": 3,
+                        "count": 1,
+                        "io": "output",
+                        "id": "conveyor_engine_state"
+                    }
+                ],
+                "discrete_input": [],
+                "holding_register": [],
+                "input_register":
+                [
+                    {
+                        "address": 1,
+                        "count": 1,
+                        "io": "input",
+                        "id": "bottle_level"
+                    },
+                    {
+                        "address": 2,
+                        "count": 1,
+                        "io": "input",
+                        "id": "bottle_distance_to_filler"
+                    }
+                ]
+            },
+            "monitors":
+            [
+                {
+                    "outbound_connection_id": "bottle_level_sensor_con",
+                    "id": "bottle_level",
+                    "value_type": "input_register",
+                    "slave_id": 1,
+                    "address": 20,
+                    "count": 1,
+                    "interval": 1
+                },
+                {
+                    "outbound_connection_id": "bottle_distance_con",
+                    "id": "bottle_distance_to_filler",
+                    "value_type": "input_register",
+                    "slave_id": 1,
+                    "address": 21,
+                    "count": 1,
+                    "interval": 1
+                }
+            ],
+            "controllers":
+            [
+                {
+                    "outbound_connection_id": "conveyor_belt_con",
+                    "id": "conveyor_engine_state",
+                    "value_type": "coil",
+                    "slave_id": 1,
+                    "address": 30,
+                    "count": 1,
+                    "interval": 1
+                }
+            ]
         }
     ],
 
@@ -135,6 +225,68 @@
                     }
                 ]
             }
+        },
+        {
+            "name": "bottle_level_sensor",
+            "hil": "bottle_factory",
+            "network":
+            {
+                "ip": "192.168.0.12",
+                "docker_network": "vlan1"
+            },
+            "inbound_connections":
+            [
+                {
+                    "type": "rtu",
+                    "slave_id": 1,
+                    "comm_port": "ttyS8"
+                }
+            ],
+            "values":
+            {
+                "coil": [],
+                "discrete_input": [],
+                "input_register":
+                [
+                    {
+                        "address": 20,
+                        "count": 1,
+                        "physical_value": "bottle_level_value"
+                    }
+                ],
+                "holding_register": []
+            }
+        },
+        {
+            "name": "bottle_distance_to_filler_sensor",
+            "hil": "bottle_factory",
+            "network":
+            {
+                "ip": "192.168.0.13",
+                "docker_network": "vlan1"
+            },
+            "inbound_connections":
+            [
+                {
+                    "type": "rtu",
+                    "slave_id": 1,
+                    "comm_port": "ttyS10"
+                }
+            ],
+            "values":
+            {
+                "coil": [],
+                "discrete_input": [],
+                "input_register":
+                [
+                    {
+                        "address": 21,
+                        "count": 1,
+                        "physical_value": "bottle_distance_to_filler_value"
+                    }
+                ],
+                "holding_register": []
+            }
         }
     ],
 
@@ -146,7 +298,7 @@
             "hil": "bottle_factory",
             "network":
             {
-                "ip": "192.168.0.12",
+                "ip": "192.168.0.14",
                 "docker_network": "vlan1"
             },
             "inbound_connections":
@@ -184,7 +336,7 @@
             "hil": "bottle_factory",
             "network":
             {
-                "ip": "192.168.0.13",
+                "ip": "192.168.0.15",
                 "docker_network": "vlan1"
             },
             "inbound_connections":
@@ -215,6 +367,44 @@
                     "name": "tank_output_valve_state"
                 }
             ]
+        },
+        {
+            "name": "conveyor_belt_engine",
+            "logic": "conveyor_belt_logic.py",
+            "hil": "bottle_factory",
+            "network":
+            {
+                "ip": "192.168.0.16",
+                "docker_network": "vlan1"
+            },
+            "inbound_connections":
+            [
+                {
+                    "type": "rtu",
+                    "slave_id": 1,
+                    "comm_port": "ttyS12"
+                }
+            ],
+            "values":
+            {
+                "coil":
+                [
+                    {
+                        "address": 30,
+                        "count": 1,
+                        "physical_value": "conveyor_belt_engine_state"
+                    }
+                ],
+                "discrete_input": [],
+                "input_register": [],
+                "holding_register": []
+            },
+            "physical_values":
+            [
+                {
+                    "name": "conveyor_belt_engine_state"
+                }
+            ]
         }
     ],
 
@@ -236,6 +426,18 @@
                 {
                     "name": "tank_output_valve_state",
                     "io": "input"
+                },
+                {
+                    "name": "bottle_level_value",
+                    "io": "output"
+                },
+                {
+                    "name": "bottle_distance_to_filler_value",
+                    "io": "output"
+                },
+                {
+                    "name": "conveyor_belt_engine_state",
+                    "io": "input"
                 }
             ]
         }
@@ -254,6 +456,18 @@
         {
             "src": "ttyS5",
             "dest": "ttyS6"
+        },
+        {
+            "src": "ttyS7",
+            "dest": "ttyS8"
+        },
+        {
+            "src": "ttyS9",
+            "dest": "ttyS10"
+        },
+        {
+            "src": "ttyS11",
+            "dest": "ttyS12"
         }
     ],
     

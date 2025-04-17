@@ -33,6 +33,24 @@ services:
     ports:
     - 1111
     - 5020
+  plc2:
+    build: /home/jaxson/Documents/IndustrialControlSystems/ICS-SimLab/simulation/containers/plc2
+    container_name: plc2
+    privileged: true
+    command:
+    - python3
+    - -u
+    - plc.py
+    volumes:
+    - /home/jaxson/Documents/IndustrialControlSystems/ICS-SimLab/simulation/communications/ttyS7:/src/ttyS7
+    - /home/jaxson/Documents/IndustrialControlSystems/ICS-SimLab/simulation/communications/ttyS9:/src/ttyS9
+    - /home/jaxson/Documents/IndustrialControlSystems/ICS-SimLab/simulation/communications/ttyS11:/src/ttyS11
+    networks:
+      vlan1:
+        ipv4_address: 192.168.0.22
+    ports:
+    - 1111
+    - 5020
   tank_level_sensor:
     build: /home/jaxson/Documents/IndustrialControlSystems/ICS-SimLab/simulation/containers/tank_level_sensor
     container_name: tank_level_sensor
@@ -50,6 +68,40 @@ services:
     ports:
     - 1111
     - 5020
+  bottle_level_sensor:
+    build: /home/jaxson/Documents/IndustrialControlSystems/ICS-SimLab/simulation/containers/bottle_level_sensor
+    container_name: bottle_level_sensor
+    privileged: true
+    volumes:
+    - /home/jaxson/Documents/IndustrialControlSystems/ICS-SimLab/simulation/communications/physical_interations.db:/src/physical_interations.db
+    - /home/jaxson/Documents/IndustrialControlSystems/ICS-SimLab/simulation/communications/ttyS8:/src/ttyS8
+    command:
+    - python3
+    - -u
+    - sensor.py
+    networks:
+      vlan1:
+        ipv4_address: 192.168.0.12
+    ports:
+    - 1111
+    - 5020
+  bottle_distance_to_filler_sensor:
+    build: /home/jaxson/Documents/IndustrialControlSystems/ICS-SimLab/simulation/containers/bottle_distance_to_filler_sensor
+    container_name: bottle_distance_to_filler_sensor
+    privileged: true
+    volumes:
+    - /home/jaxson/Documents/IndustrialControlSystems/ICS-SimLab/simulation/communications/physical_interations.db:/src/physical_interations.db
+    - /home/jaxson/Documents/IndustrialControlSystems/ICS-SimLab/simulation/communications/ttyS10:/src/ttyS10
+    command:
+    - python3
+    - -u
+    - sensor.py
+    networks:
+      vlan1:
+        ipv4_address: 192.168.0.13
+    ports:
+    - 1111
+    - 5020
   tank_input_valve:
     build: /home/jaxson/Documents/IndustrialControlSystems/ICS-SimLab/simulation/containers/tank_input_valve
     container_name: tank_input_valve
@@ -63,7 +115,7 @@ services:
     - actuator.py
     networks:
       vlan1:
-        ipv4_address: 192.168.0.12
+        ipv4_address: 192.168.0.14
     ports:
     - 1111
     - 5020
@@ -80,7 +132,24 @@ services:
     - actuator.py
     networks:
       vlan1:
-        ipv4_address: 192.168.0.13
+        ipv4_address: 192.168.0.15
+    ports:
+    - 1111
+    - 5020
+  conveyor_belt_engine:
+    build: /home/jaxson/Documents/IndustrialControlSystems/ICS-SimLab/simulation/containers/conveyor_belt_engine
+    container_name: conveyor_belt_engine
+    privileged: true
+    volumes:
+    - /home/jaxson/Documents/IndustrialControlSystems/ICS-SimLab/simulation/communications/physical_interations.db:/src/physical_interations.db
+    - /home/jaxson/Documents/IndustrialControlSystems/ICS-SimLab/simulation/communications/ttyS12:/src/ttyS12
+    command:
+    - python3
+    - -u
+    - actuator.py
+    networks:
+      vlan1:
+        ipv4_address: 192.168.0.16
     ports:
     - 1111
     - 5020
