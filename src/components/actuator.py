@@ -14,6 +14,7 @@ from pymodbus.server import ModbusTcpServer, ModbusSerialServer
 from pymodbus.datastore import ModbusSequentialDataBlock, ModbusSlaveContext, ModbusServerContext
 
 logging.basicConfig(level=logging.INFO, format='%(levelname)s - %(message)s')
+logging.getLogger('werkzeug').setLevel(logging.ERROR)
 
 app = Flask(__name__)
 
@@ -236,7 +237,7 @@ async def main():
     # TODO: investigate if the actuator even needs logic
     # start the actuator logic thread
     # the logic will read "register_values" and write to "physical_values"
-    actuator_thread = Thread(target=logic.logic, args=(register_values, physical_values, 1))
+    actuator_thread = Thread(target=logic.logic, args=(register_values, physical_values, 0.2))
     actuator_thread.daemon = True
     actuator_thread.start()
     

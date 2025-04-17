@@ -8,9 +8,10 @@ import requests
 import json
 import time
 import asyncio
+import logging
 import streamlit as st
 import pandas as pd
-
+                  
 # FUNCTION: retrieve_configs
 # PURPOSE:  Retrieves the JSON configs
 def retrieve_configs(filename):
@@ -28,26 +29,31 @@ def get_component_info(configs):
     sensor_info = []
     actuator_info = []
 
-    for hmi in configs["hmis"]:
-        hmi_info.append({
-            "name": hmi["name"], 
-            "ip": hmi["network"]["ip"]
+    if "hmis" in configs:
+        for hmi in configs["hmis"]:
+            hmi_info.append({
+                "name": hmi["name"], 
+                "ip": hmi["network"]["ip"]
+                })
+            
+    if "plcs" in configs:
+        for plc in configs["plcs"]:
+            plc_info.append({
+                "name": plc["name"], 
+                "ip": plc["network"]["ip"]
+                })
+    if "sensors" in configs:
+        for sensor in configs["sensors"]:
+            sensor_info.append({
+                "name": sensor["name"],
+                "ip": sensor["network"]["ip"],
             })
-    for plc in configs["plcs"]:
-        plc_info.append({
-            "name": plc["name"], 
-            "ip": plc["network"]["ip"]
+    if "actuators" in configs:
+        for actuator in configs["actuators"]:
+            actuator_info.append({
+                "name": actuator["name"],
+                "ip": actuator["network"]["ip"],
             })
-    for sensor in configs["sensors"]:
-        sensor_info.append({
-            "name": sensor["name"],
-            "ip": sensor["network"]["ip"],
-        })
-    for actuator in configs["actuators"]:
-        actuator_info.append({
-            "name": actuator["name"],
-            "ip": actuator["network"]["ip"],
-        })
     return hmi_info, plc_info, sensor_info, actuator_info
 
 

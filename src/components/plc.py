@@ -15,6 +15,7 @@ from pymodbus.server import ModbusTcpServer, ModbusSerialServer
 from pymodbus.datastore import ModbusSequentialDataBlock, ModbusSlaveContext, ModbusServerContext
 
 logging.basicConfig(level=logging.INFO, format='%(levelname)s - %(message)s')
+logging.getLogger('werkzeug').setLevel(logging.ERROR)
 
 app = Flask(__name__)
 
@@ -172,6 +173,52 @@ def start_monitors(configs, outbound_cons, values):
     return monitor_threads
 
 
+# FUNCTION: make_writing_callback
+# PURPOSE:  Function that creates a first class function callback (outside of scope) to be
+#           called when a value needs to be written
+def make_writing_callback(configs, controller_config, output_reg_values, modbus_con, values):
+    def write_value():
+        logging.info("Callback made")
+        outbound_con_id = controller_config["outbound_connection_id"]
+
+        if controller_config["value_type"] == "coil":
+            # get the PLC value to write to
+            for coil in configs["values"]["coil"]:
+                if coil["id"] == controller_config["id"]:
+                    plc_coil = coil
+
+            # find the output register to write from
+            for output_reg in output_reg_values["coil"]:
+                if output_reg["id"] == controller_config["id"]:
+                    # write to the modbus object
+                    modbus_con.write_coil(address=controller_config["address"],
+                                            #slave=controller_config["slave_id"], #TODO
+                                            value=output_reg["value"])
+                    logging.info(f"Writing to controller {outbound_con_id}, to address {controller_config['address']} value {output_reg['value']}")
+                    # write to the PLCs memory as well 
+                    values["co"].setValues(plc_coil["address"], output_reg["value"])
+
+        elif controller_config["value_type"] == "holding_register":
+            # get the PLC value to write to
+            for hr in configs["values"]["holding_register"]:
+                if hr["id"] == controller_config["id"]:
+                    plc_hr = hr 
+
+                # find the output register to write from
+                for output_reg in output_reg_values["holding_register"]:
+                    if output_reg["id"] == controller_config["id"]:
+                        # write to the modbus object
+                        modbus_con.write_register(address=controller_config["address"],
+                                                #slave=controller_config["slave_id"],
+                                                value=output_reg["value"])
+                        logging.info(f"Writing to controller {outbound_con_id}, to address {controller_config['address']} value {output_reg['value']}")
+                        # write to the PLCs memory as well 
+                        values["hr"].setValues(plc_hr["address"], output_reg["value"])
+        else:
+            raise Exception("Trying to write to non-writable register")
+    return write_value
+
+
 # FUNCTION: get_controller_callbacks
 # PURPOSE:  Returns a dictionary of callbacks to be used to write to 
 #           their specific register.
@@ -182,49 +229,9 @@ def get_controller_callbacks(configs, outbound_cons, output_reg_values, values):
         outbound_con_id = controller_config["outbound_connection_id"]
         modbus_con = outbound_cons[outbound_con_id]
 
-        # create the callback writing function (remember modbus_con is the modbus connection object)
-        if controller_config["value_type"] == "coil":
-            # get the PLC value to write to
-            for coil in configs["values"]["coil"]:
-                if coil["id"] == controller_config["id"]:
-                    plc_coil = coil 
-                    break
-
-            # define a first class function that gets the correct out_reg_value and modbus writes it
-            def write_value():
-                # find the output register to write from
-                for output_reg in output_reg_values["coil"]:
-                    if output_reg["id"] == controller_config["id"]:
-                        # write to the modbus object
-                        modbus_con.write_coil(address=controller_config["address"],
-                                                #slave=controller_config["slave_id"], #TODO
-                                                value=output_reg["value"])
-                        # write to the PLCs memory as well 
-                        values["co"].setValues(plc_coil["address"], output_reg["value"])
-            
-            callback = write_value
-            
-        elif controller_config["value_type"] == "holding_register":
-            # get the PLC value to write to
-            for hr in configs["values"]["holding_register"]:
-                if hr["id"] == controller_config["id"]:
-                    plc_hr = hr 
-                    break
-
-            def write_value():
-                # find the output register to write from
-                for output_reg in output_reg_values["holding_register"]:
-                    if output_reg["id"] == controller_config["id"]:
-                        # write to the modbus object
-                        modbus_con.write_register(address=controller_config["address"],
-                                                #slave=controller_config["slave_id"],
-                                                value=output_reg["value"])
-                        # write to the PLCs memory as well 
-                        values["hr"].setValues(plc_hr["address"], output_reg["value"])
-
-            callback = write_value
-        else:
-            raise Exception("Trying to write to non-writable register")
+        # define a first class function that gets the correct out_reg_value and modbus writes it
+        callback = make_writing_callback(configs, controller_config, output_reg_values, modbus_con, values)
+    
         # put the writing callback function into the controller_callbacks dictionary (key is the controller id)
         controller_callbacks[controller_config["id"]] = callback
     return controller_callbacks

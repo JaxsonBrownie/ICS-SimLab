@@ -84,6 +84,7 @@ def build_network_yaml(json_content):
 def build_ui_yaml(json_content):
     root_path = Path(__file__).resolve().parent.parent
     json_ui = {}
+    if "ui" not in json_content: return {}
 
     # extract basic docker configuration
     build = f"{root_path}/simulation/containers/ui"
@@ -112,6 +113,7 @@ def build_ui_yaml(json_content):
 def build_plc_yaml(json_content):
     root_path = Path(__file__).resolve().parent.parent
     json_plcs = {}
+    if "plcs" not in json_content: return {}
 
     for plc in json_content["plcs"]:
         # extract basic docker configuration
@@ -189,6 +191,7 @@ def build_plc_yaml(json_content):
 def build_hmi_yaml(json_content):
     root_path = Path(__file__).resolve().parent.parent
     json_hmis = {}
+    if "hmis" not in json_content: return {}
 
     for hmi in json_content["hmis"]:
         # extract basic docker configuration
@@ -265,6 +268,7 @@ def build_hmi_yaml(json_content):
 def build_sensor_yaml(json_content):
     root_path = Path(__file__).resolve().parent.parent
     json_sensors = {}
+    if "sensors" not in json_content: return {}
 
     for sensor in json_content["sensors"]:
         build = f"{root_path}/simulation/containers/{sensor['name']}"
@@ -308,6 +312,7 @@ def build_sensor_yaml(json_content):
 def build_actuator_yaml(json_content):
     root_path = Path(__file__).resolve().parent.parent
     json_actuators = {}
+    if "actuators" not in json_content: return {}
 
     for actuator in json_content["actuators"]:
         build = f"{root_path}/simulation/containers/{actuator['name']}"
@@ -351,6 +356,7 @@ def build_actuator_yaml(json_content):
 def build_hil_yaml(json_content):
     root_path = Path(__file__).resolve().parent.parent
     json_hils = {}
+    if "hils" not in json_content: return {}
 
     for hil in json_content["hils"]:
         build = f"{root_path}/simulation/containers/{hil['name']}"
@@ -376,6 +382,8 @@ def build_hil_yaml(json_content):
 # PURPOSE:  Creates the ui directory
 def build_ui_directory(json_content):
     root_path = Path(__file__).resolve().parent.parent
+    if "ui" not in json_content: return
+
     Path(f"{root_path}/simulation/containers/ui").mkdir()
     Path(f"{root_path}/simulation/containers/ui/src").mkdir()
     shutil.copy(f"{root_path}/src/docker-files/ui/Dockerfile", f"{root_path}/simulation/containers/ui")
@@ -392,6 +400,7 @@ def build_ui_directory(json_content):
 # PURPOSE:  Creates the hmi directory
 def build_hmi_directory(json_content):
     root_path = Path(__file__).resolve().parent.parent
+    if "hmis" not in json_content: return
 
     # create hmi directories
     for hmi in json_content["hmis"]:
@@ -418,6 +427,7 @@ def build_hmi_directory(json_content):
 # PURPOSE:  Creates the plc directory
 def build_plc_directory(json_content, directory):
     root_path = Path(__file__).resolve().parent.parent
+    if "plcs" not in json_content: return
 
     # create plc directories
     for plc in json_content["plcs"]:
@@ -446,6 +456,7 @@ def build_plc_directory(json_content, directory):
 # PURPOSE:  Creates the directories for the sensor componenets
 def build_sensor_directory(json_content):
     root_path = Path(__file__).resolve().parent.parent
+    if "sensors" not in json_content: return
 
     # create sensor directories
     for sensor in json_content["sensors"]:
@@ -472,6 +483,7 @@ def build_sensor_directory(json_content):
 # PURPOSE:  Creates the directories for the actuator components
 def build_actuator_directory(json_content, directory):
     root_path = Path(__file__).resolve().parent.parent
+    if "actuators" not in json_content: return
     
     # create actuator directories
     for actuator in json_content["actuators"]:
@@ -501,6 +513,7 @@ def build_actuator_directory(json_content, directory):
 # PURPOSE:  Creates the hardware-in-the-loop directories
 def build_hil_directory(json_content, directory):
     root_path = Path(__file__).resolve().parent.parent
+    if "hils" not in json_content: return
 
     # create hil directories
     for hil in json_content["hils"]:

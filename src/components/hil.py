@@ -11,6 +11,7 @@ import time
 from threading import Thread
 
 logging.basicConfig(level=logging.INFO, format='%(levelname)s - %(message)s')
+logging.getLogger('werkzeug').setLevel(logging.ERROR)
 
 # here we import the defined logic
 # the logic will always be in a python file called logic.py, which gets copied to the container
