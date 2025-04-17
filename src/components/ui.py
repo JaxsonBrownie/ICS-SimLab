@@ -6,8 +6,6 @@
 
 import requests
 import json
-import logging
-import threading
 import time
 import asyncio
 import streamlit as st
@@ -23,12 +21,18 @@ def retrieve_configs(filename):
 
 
 # FUNCTION: get_component_info
-# PURPOSE:  Returns all names and info for all the components in a dictionary
+# PURPOSE:  Returns all names and info for all the components in lists
 def get_component_info(configs):
+    hmi_info = []
     plc_info = []
     sensor_info = []
     actuator_info = []
 
+    for hmi in configs["hmis"]:
+        hmi_info.append({
+            "name": hmi["name"], 
+            "ip": hmi["network"]["ip"]
+            })
     for plc in configs["plcs"]:
         plc_info.append({
             "name": plc["name"], 
@@ -44,12 +48,12 @@ def get_component_info(configs):
             "name": actuator["name"],
             "ip": actuator["network"]["ip"],
         })
-    return plc_info, sensor_info, actuator_info
+    return hmi_info, plc_info, sensor_info, actuator_info
 
 
-# FUNCTION: create_table_rows
+# FUNCTION: create_register_table_rows
 # PURPOSE:  Builds up the table rows for the component registers
-def create_table_rows(type, address, count, value, response):
+def create_register_table_rows(type, address, count, value, response):
     for co in response["coil"]:
         type.append("coil")
         address.append(co["address"])
@@ -72,14 +76,14 @@ def create_table_rows(type, address, count, value, response):
         value.append(hr["value"])
 
 
-# FUNCTION: create_table
+# FUNCTION: create_register_table
 # PURPOSE:  Creates a dataframe for the component register table
-def create_table(response):
+def create_register_table(response):
     type = []
     address = []
     count = []
     value = []
-    create_table_rows(type, address, count, value, response)
+    create_register_table_rows(type, address, count, value, response)
     dataframe = pd.DataFrame({
             "type": type,
             "address": address,
@@ -105,7 +109,7 @@ async def main():
         configs = retrieve_configs("config.json")
 
         # get all TCP/IP component info (name: ip)
-        plc_info, sensor_info, actuator_info = get_component_info(configs)
+        hmi_info, plc_info, sensor_info, actuator_info = get_component_info(configs)
         st.session_state['config_loaded'] = True
 
         # get the physical components (SQLite3)
@@ -116,9 +120,17 @@ async def main():
     st.title("Industrial Control System Dashboard")
 
     st.header("Overall Statistics")
-    st.write(f"Number of PLCs: {len(plc_info)}")
+    st.write(f"Number of Human Machine Interfaces (HMIs): {len(hmi_info)}")
+    st.write(f"Number of Programmable Logic Controllers (PLCs): {len(plc_info)}")
     st.write(f"Number of Sensors: {len(sensor_info)}")
     st.write(f"Number of Actuators: {len(actuator_info)}")
+
+    st.divider()
+    st.header("Human Machine Interfaces")
+    st.subheader("Input + Output Registers")
+    hmis = {}
+    for hmi in hmi_info:
+        hmis[hmi["name"]] = st.empty() 
 
     st.divider()
     st.header("Programmable Logic Controllers")
@@ -143,10 +155,25 @@ async def main():
 
     # have a single event loop for API polling (streamlit sucks for multi threaded stuff)
     while True:
+        # poll hmi
+        for hmi in hmi_info:
+            hmi_response = requests.get(f"http://{hmi['ip']}:1111/registers").json()
+            hmi_table = create_register_table(hmi_response)
+            hmis[hmi["name"]].dataframe(
+                hmi_table,
+                column_config={
+                    "type": st.column_config.TextColumn("Type", width="medium"),
+                    "value": st.column_config.Column("Value", width="medium"),
+                    "address": st.column_config.NumberColumn("Address", width="medium"),
+                    "count": st.column_config.NumberColumn("Count", width="medium"),
+                },
+                use_container_width=False
+            )
+        
         # poll plc
         for plc in plc_info:
             plc_response = requests.get(f"http://{plc['ip']}:1111/registers").json()
-            plc_table = create_table(plc_response)
+            plc_table = create_register_table(plc_response)
             plcs[plc["name"]].dataframe(
                 plc_table,
                 column_config={
@@ -161,7 +188,7 @@ async def main():
         # poll sensor
         for sensor in sensor_info:
             sensor_response = requests.get(f"http://{sensor['ip']}:1111/registers").json()
-            sensor_table = create_table(sensor_response)
+            sensor_table = create_register_table(sensor_response)
             sensors[sensor["name"]].dataframe(
                 sensor_table,
                 column_config={
@@ -176,7 +203,7 @@ async def main():
         # poll actuator
         for actuator in actuator_info:
             actuator_response = requests.get(f"http://{actuator['ip']}:1111/registers").json()
-            actuator_table = create_table(actuator_response)
+            actuator_table = create_register_table(actuator_response)
             actuators[actuator["name"]].dataframe(
                 actuator_table,
                 column_config={

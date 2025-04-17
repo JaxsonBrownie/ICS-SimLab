@@ -114,6 +114,7 @@ def start_sensor(configs, values):
 
         time.sleep(0.2)
 
+
 # FUNCTION: update_register_values
 # PURPOSE:  Updates the "register_values" dictionary with the register values of the modbus server,
 #           which is in the "values" dictionary.
@@ -155,7 +156,6 @@ def update_register_values(register_values, values):
 
 # FUNCTION: create_register_values_dict
 # PURPOSE:  Returns a dictionary that is used to store all register values in the following format:
-
 def create_register_values_dict(configs):
     register_values = {}
     register_values["coil"] = []
@@ -231,23 +231,20 @@ async def main():
     register_values = create_register_values_dict(configs)
 
     # start the sensor reading thread
-    sensor_thread = Thread(target=start_sensor, args=(configs, values))
-    sensor_thread.daemon = True
+    sensor_thread = Thread(target=start_sensor, args=(configs, values), daemon=True)
     sensor_thread.start()
 
     # start a thread to continously update the registers dictionary
-    sync_in_registers = Thread(target=update_register_values, args=(register_values, values))
-    sync_in_registers.daemon = True
-    sync_in_registers.start()
+    sync_registers = Thread(target=update_register_values, args=(register_values, values), daemon=True)
+    sync_registers.start()
 
     # start the flask endpoint
-    flask_thread = Thread(target=flask_app, args=(app,))
-    flask_thread.daemon = True
+    flask_thread = Thread(target=flask_app, args=(app,), daemon=True)
     flask_thread.start()
 
     # await tasks
     await server_task
-    sync_in_registers.join()
+    sync_registers.join()
     flask_thread.join()
 
 
