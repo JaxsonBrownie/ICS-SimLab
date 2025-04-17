@@ -243,22 +243,22 @@ def update_register_values(register_values, values):
         # update the cloned copy with the real modbus values
         index = 0
         for co in register_values["coil"]:
-            modbus_value = values["co"].getValues(co["address"]-1, co["count"])[0]
+            modbus_value = values["co"].getValues(co["address"], co["count"])[0]
             updated_register_values["coil"][index]["value"] = modbus_value
             index += 1
         index = 0
         for di in register_values["discrete_input"]:
-            modbus_value = values["di"].getValues(di["address"]-1, di["count"])[0]
+            modbus_value = values["di"].getValues(di["address"], di["count"])[0]
             updated_register_values["discrete_input"][index]["value"] = modbus_value
             index += 1
         index = 0
         for hr in register_values["holding_register"]:
-            modbus_value = values["hr"].getValues(hr["address"]-1, hr["count"])[0]
+            modbus_value = values["hr"].getValues(hr["address"], hr["count"])[0]
             updated_register_values["holding_register"][index]["value"] = modbus_value
             index += 1
         index = 0
         for ir in register_values["input_register"]:
-            modbus_value = values["ir"].getValues(ir["address"]-1, ir["count"])[0]
+            modbus_value = values["ir"].getValues(ir["address"], ir["count"])[0]
             updated_register_values["input_register"][index]["value"] = modbus_value
             index += 1
         
