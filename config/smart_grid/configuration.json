@@ -88,7 +88,7 @@
     [
         {
             "name": "ats_plc",
-            "logic": "smart_grid_simulation/ats_plc_logic.py",
+            "logic": "ats_plc_logic.py",
             "network": 
             {
                 "ip": "192.168.0.20",
@@ -215,7 +215,7 @@
     [
         {
             "name": "transfer_switch",
-            "logic": "smart_grid_simulation/transfer_switch_logic.py",
+            "logic": "transfer_switch_logic.py",
             "hil": "electrical_hil",
             "network": 
             {
@@ -263,7 +263,7 @@
     [
         {
             "name": "electrical_hil",
-            "logic": "smart_grid_simulation/electrical_hil_logic.py",
+            "logic": "electrical_hil_logic.py",
             "physical_values":
             [
                 {

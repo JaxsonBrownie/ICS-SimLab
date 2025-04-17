@@ -15,8 +15,10 @@ from pathlib import Path
 # FUNCTION: parse_json_to_yaml
 # PURPOSE: Opens and validates the JSON file and parses it into a
 #          Docker Compose YAML file
-def parse_json_to_yaml(json_filename, yaml_filename):
+def parse_json_to_yaml(directory, yaml_filename):
     parsed_json_content = ""
+    json_filename = f"{directory}/configuration.json"
+
     with open(json_filename, "r") as json_file:
         content = json_file.read()
         json_content = {}
@@ -414,7 +416,7 @@ def build_hmi_directory(json_content):
 
 # FUNCTION: build_plc_directory
 # PURPOSE:  Creates the plc directory
-def build_plc_directory(json_content):
+def build_plc_directory(json_content, directory):
     root_path = Path(__file__).resolve().parent.parent
 
     # create plc directories
@@ -436,7 +438,7 @@ def build_plc_directory(json_content):
 
         # copy PLC code and logic file
         logic_file = plc["logic"]
-        shutil.copy(f"{root_path}/logic/{logic_file}", f"{root_path}/simulation/containers/{plc['name']}/src/logic.py")
+        shutil.copy(f"{directory}logic/{logic_file}", f"{root_path}/simulation/containers/{plc['name']}/src/logic.py")
         shutil.copy(f"{root_path}/src/components/plc.py", f"{root_path}/simulation/containers/{plc['name']}/src")
 
 
@@ -468,7 +470,7 @@ def build_sensor_directory(json_content):
 
 # FUNCTION: build_actuator_directory
 # PURPOSE:  Creates the directories for the actuator components
-def build_actuator_directory(json_content):
+def build_actuator_directory(json_content, directory):
     root_path = Path(__file__).resolve().parent.parent
     
     # create actuator directories
@@ -491,13 +493,13 @@ def build_actuator_directory(json_content):
 
         # copy actuator code and logic
         logic_file = actuator["logic"]
-        shutil.copy(f"{root_path}/logic/{logic_file}", f"{root_path}/simulation/containers/{actuator['name']}/src/logic.py")
+        shutil.copy(f"{directory}logic/{logic_file}", f"{root_path}/simulation/containers/{actuator['name']}/src/logic.py")
         shutil.copy(f"{root_path}/src/components/actuator.py", f"{root_path}/simulation/containers/{actuator['name']}/src")
 
 
 # FUNCTION: build_hil_directory
 # PURPOSE:  Creates the hardware-in-the-loop directories
-def build_hil_directory(json_content):
+def build_hil_directory(json_content, directory):
     root_path = Path(__file__).resolve().parent.parent
 
     # create hil directories
@@ -517,14 +519,14 @@ def build_hil_directory(json_content):
 
         # copy logic file and code
         logic_file = hil["logic"]
-        shutil.copy(f"{root_path}/logic/{logic_file}", f"{root_path}/simulation/containers/{hil['name']}/src/logic.py")
+        shutil.copy(f"{directory}logic/{logic_file}", f"{root_path}/simulation/containers/{hil['name']}/src/logic.py")
         shutil.copy(f"{root_path}/src/components/hil.py", f"{root_path}/simulation/containers/{hil['name']}/src")
 
 
 # FUNCTION: create_containers
 # PURPOSE:  Builds the directory containers for the main components of the simulation. These
 #           include the PLCs, HMIs, and the sensors and actuators.
-def create_containers(json_content):
+def create_containers(json_content, directory):
     root_path = Path(__file__).resolve().parent.parent
 
     # delete all existing container directories
@@ -534,10 +536,10 @@ def create_containers(json_content):
     # create directories for all component containers
     build_ui_directory(json_content)
     build_hmi_directory(json_content)
-    build_plc_directory(json_content)
+    build_plc_directory(json_content, directory)
     build_sensor_directory(json_content)
-    build_actuator_directory(json_content)
-    build_hil_directory(json_content)
+    build_actuator_directory(json_content, directory)
+    build_hil_directory(json_content, directory)
     
     
 # FUNCTION: create_communications
@@ -589,19 +591,14 @@ def create_communications(json_content):
 # FUNCTION: build
 # PURPOSE:  Builds the simulation content, which includes the docker compoes YAML,
 #           the docker container directories, and the communication files.
-def build():
+def build(directory):
     root_path = Path(__file__).resolve().parent.parent
 
     # create the docker compose yaml file
-    json_filename = "smart_grid_simulation.json"
-    #json_filename = "test_json.json"
-    json_content = parse_json_to_yaml(f"{root_path}/config/{json_filename}", f"{root_path}/docker-compose.yaml")
+    json_content = parse_json_to_yaml(directory, f"{root_path}/docker-compose.yaml")
 
     # create container directories
-    create_containers(json_content)
+    create_containers(json_content, directory)
 
     # build communication directory
     links = create_communications(json_content)
-
-if __name__ == "__main__":
-    build()

@@ -17,7 +17,7 @@ logging.basicConfig(level=logging.INFO, format='%(levelname)s - %(message)s')
 try:
     import logic # type: ignore
 except ModuleNotFoundError:
-    print("Could not import logic for HIL component")
+    logging.error("Could not import logic for HIL component")
 
 # FUNCTION: retrieve_configs
 # PURPOSE:  Retrieves the JSON configs
