@@ -11,9 +11,8 @@ import logging
 from flask import Flask, jsonify
 from threading import Thread
 from pymodbus.client import ModbusTcpClient, ModbusSerialClient
-from pymodbus.server import ModbusTcpServer, ModbusSerialServer, StartSerialServer, StartTcpServer
+from pymodbus.server import ModbusTcpServer, ModbusSerialServer
 from pymodbus.datastore import ModbusSequentialDataBlock, ModbusSlaveContext, ModbusServerContext
-from pymodbus.exceptions import ModbusIOException
 
 logging.basicConfig(level=logging.INFO, format='%(levelname)s - %(message)s')
 
@@ -172,10 +171,11 @@ def start_monitors(configs, outbound_cons, values):
         monitor_threads.append(monitor_thread)
     return monitor_threads
 
+
 # FUNCTION: get_controller_callbacks
 # PURPOSE:  Returns a dictionary of callbacks to be used to write to 
-#           write to their specific register.
-def get_controller_callbacks(configs, outbound_cons, output_reg_values):
+#           their specific register.
+def get_controller_callbacks(configs, outbound_cons, output_reg_values, values):
     controller_callbacks = {}
     for controller_config in configs["controllers"]:
         # get outbound connection for the controller
@@ -184,6 +184,12 @@ def get_controller_callbacks(configs, outbound_cons, output_reg_values):
 
         # create the callback writing function (remember modbus_con is the modbus connection object)
         if controller_config["value_type"] == "coil":
+            # get the PLC value to write to
+            for coil in configs["values"]["coil"]:
+                if coil["id"] == controller_config["id"]:
+                    plc_coil = coil 
+                    break
+
             # define a first class function that gets the correct out_reg_value and modbus writes it
             def write_value():
                 print("CALLBACK PING")
@@ -194,10 +200,18 @@ def get_controller_callbacks(configs, outbound_cons, output_reg_values):
                         modbus_con.write_coil(address=controller_config["address"],
                                                 #slave=controller_config["slave_id"], #TODO
                                                 value=output_reg["value"])
+                        # write to the PLCs memory as well 
+                        values["co"].setValues(plc_coil["address"], output_reg["value"])
             
             callback = write_value
             
         elif controller_config["value_type"] == "holding_register":
+            # get the PLC value to write to
+            for hr in configs["values"]["holding_register"]:
+                if hr["id"] == controller_config["id"]:
+                    plc_hr = hr 
+                    break
+
             def write_value():
                 print("CALLBACK PING")
                 # find the output register to write from
@@ -207,6 +221,9 @@ def get_controller_callbacks(configs, outbound_cons, output_reg_values):
                         modbus_con.write_register(address=controller_config["address"],
                                                 #slave=controller_config["slave_id"],
                                                 value=output_reg["value"])
+                        # write to the PLCs memory as well 
+                        values["hr"].setValues(plc_hr["address"], output_reg["value"])
+
             callback = write_value
         else:
             raise Exception("Trying to write to non-writable register")
@@ -226,22 +243,22 @@ def update_register_values(register_values, values):
         # update the cloned copy with the real modbus values
         index = 0
         for co in register_values["coil"]:
-            modbus_value = values["co"].getValues(co["address"], co["count"])[0]
+            modbus_value = values["co"].getValues(co["address"]-1, co["count"])[0]
             updated_register_values["coil"][index]["value"] = modbus_value
             index += 1
         index = 0
         for di in register_values["discrete_input"]:
-            modbus_value = values["di"].getValues(di["address"], di["count"])[0]
+            modbus_value = values["di"].getValues(di["address"]-1, di["count"])[0]
             updated_register_values["discrete_input"][index]["value"] = modbus_value
             index += 1
         index = 0
         for hr in register_values["holding_register"]:
-            modbus_value = values["hr"].getValues(hr["address"], hr["count"])[0]
+            modbus_value = values["hr"].getValues(hr["address"]-1, hr["count"])[0]
             updated_register_values["holding_register"][index]["value"] = modbus_value
             index += 1
         index = 0
         for ir in register_values["input_register"]:
-            modbus_value = values["ir"].getValues(ir["address"], ir["count"])[0]
+            modbus_value = values["ir"].getValues(ir["address"]-1, ir["count"])[0]
             updated_register_values["input_register"][index]["value"] = modbus_value
             index += 1
         
@@ -366,9 +383,11 @@ def get_registers_route():
     global register_values
     return jsonify(register_values)
 
+
 # define function to run flask in another thread
 def flask_app(flask_app):
     flask_app.run(host="0.0.0.0", port=1111)
+
 
 # FUNCTION: main
 # PURPOSE:  The main execution
@@ -392,8 +411,9 @@ async def main():
     inbound_cons = asyncio.create_task(init_inbound_cons(configs, context))
 
     # start any outbound connections, waiting 2 seconds to ensure connections are up
-    outbound_cons = init_outbound_cons(configs)
     time.sleep(2)
+    outbound_cons = init_outbound_cons(configs)
+    time.sleep(1)
 
     # start any configured monitors using the started outbound connections
     monitor_threads = start_monitors(configs, outbound_cons, values)
@@ -405,34 +425,32 @@ async def main():
     input_reg_values, output_reg_values = separate_io_registers(register_values)
 
     # create a dictionary to store the controller callback functions (key is the controller id)
-    controller_callbacks = get_controller_callbacks(configs, outbound_cons, output_reg_values)
+    controller_callbacks = get_controller_callbacks(configs, outbound_cons, output_reg_values, values)
 
-    # start a thread to continously update the input registers dictionary
-    sync_in_registers = Thread(target=update_register_values, args=(input_reg_values, values))
-    sync_in_registers.daemon = True
+    # start a thread to continously update the input and output registers dictionaries
+    sync_in_registers = Thread(target=update_register_values, args=(input_reg_values, values), daemon=True)
     sync_in_registers.start()
+    sync_out_registers = Thread(target=update_register_values, args=(output_reg_values, values), daemon=True)
+    sync_out_registers.start()
 
     # start the logic thread, passing in the input registers, output registers, and modbus controlling callback functions
-    logic_thread = Thread(target=logic.logic, args=(input_reg_values, output_reg_values, controller_callbacks))
-    logic_thread.daemon = True
+    logic_thread = Thread(target=logic.logic, args=(input_reg_values, output_reg_values, controller_callbacks), daemon=True)
     logic_thread.start()
     
     # start the flask endpoint
-    flask_thread = Thread(target=flask_app, args=(app,))
-    flask_thread.daemon = True
+    flask_thread = Thread(target=flask_app, args=(app,), daemon=True)
     flask_thread.start()
 
-    # block on the inbound connection servers and outbound monitors
+    # block on the asyncio and regula
     await inbound_cons
     for monitor_thread in monitor_threads:
         monitor_thread.join()
-    logic_thread.join()
-    sync_in_registers.join()
-    flask_thread.join()
-
-    # close all outbound client connections
     for outbound_con in outbound_cons.values():
         outbound_con.close()
+    logic_thread.join()
+    sync_in_registers.join()
+    sync_out_registers.join()
+    flask_thread.join()
     
     # block (useful if no servers or monitors are made)
     while True:

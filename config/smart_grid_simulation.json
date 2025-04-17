@@ -9,6 +9,81 @@
         }
     },
 
+    "hmis":
+    [
+        {
+            "name": "hmi",
+            "network":
+            {
+                "ip": "192.168.0.30",
+                "docker_network": "vlan1"
+            },
+            "inbound_connections":
+            [
+            ],
+            "outbound_connections":
+            [
+                {
+                    "type": "tcp",
+                    "ip": "192.168.0.20",
+                    "port": 5020,
+                    "id": "plc_con"
+                }
+            ],
+            "values":
+            {
+                "coil":
+                [
+                    {
+                        "address": 103,
+                        "count": 1,
+                        "id": "transfer_switch_state"
+                    }
+                ],
+                "discrete_input":
+                [
+                    
+                ],
+                "holding_register":
+                [
+
+                ],
+                "input_register":
+                [
+                    {
+                        "address": 101,
+                        "count": 1,
+                        "id": "solar_panel_reading"
+                    }
+                ]
+            },
+            "monitors":
+            [
+                {
+                    "outbound_connection_id": "plc_con",
+                    "id": "solar_panel_reading",
+                    "value_type": "input_register",
+                    "slave_id": 1,
+                    "address": 30,
+                    "count": 1,
+                    "interval": 1
+                },
+                {
+                    "outbound_connection_id": "plc_con",
+                    "id": "transfer_switch_state",
+                    "value_type": "coil",
+                    "slave_id": 1,
+                    "address": 10,
+                    "count": 1,
+                    "interval": 2
+                }
+            ],
+            "controllers":
+            [
+            ]
+        }
+    ],
+
     "plcs":
     [
         {
@@ -21,6 +96,11 @@
             },
             "inbound_connections":
             [
+                {
+                    "type": "tcp",
+                    "ip": "192.168.0.20",
+                    "port": 5020
+                }
             ],
             "outbound_connections":
             [

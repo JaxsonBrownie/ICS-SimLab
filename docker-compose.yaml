@@ -15,6 +15,21 @@ services:
     networks:
       vlan1:
         ipv4_address: 192.168.0.2
+  hmi:
+    build: /home/jaxson/Documents/IndustrialControlSystems/ICS-SimLab/simulation/containers/hmi
+    container_name: hmi
+    privileged: true
+    command:
+    - python3
+    - -u
+    - hmi.py
+    volumes: []
+    networks:
+      vlan1:
+        ipv4_address: 192.168.0.30
+    ports:
+    - 1111
+    - 5020
   ats_plc:
     build: /home/jaxson/Documents/IndustrialControlSystems/ICS-SimLab/simulation/containers/ats_plc
     container_name: ats_plc

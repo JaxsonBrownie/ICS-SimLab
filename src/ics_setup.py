@@ -30,6 +30,7 @@ def parse_json_to_yaml(json_filename, yaml_filename):
         # create all sections for the YAML file
         networks = build_network_yaml(json_content)
         ui = build_ui_yaml(json_content)
+        hmis = build_hmi_yaml(json_content)
         plcs = build_plc_yaml(json_content)
         sensors = build_sensor_yaml(json_content)
         actuators = build_actuator_yaml(json_content)
@@ -37,7 +38,7 @@ def parse_json_to_yaml(json_filename, yaml_filename):
 
         # create the YAML file
         parsed_json_content = {
-            "services": ui | plcs | sensors | actuators | hils,
+            "services": ui | hmis | plcs | sensors | actuators | hils,
             "networks": networks,
         }
 
@@ -181,6 +182,82 @@ def build_plc_yaml(json_content):
     return json_plcs
 
 
+# FUNCTION: build_hmi_yaml
+# PURPOSE:  Builds the section of the YAML file for the HMIs
+def build_hmi_yaml(json_content):
+    root_path = Path(__file__).resolve().parent.parent
+    json_hmis = {}
+
+    for hmi in json_content["hmis"]:
+        # extract basic docker configuration
+        build = f"{root_path}/simulation/containers/{hmi['name']}"
+        container_name = hmi["name"]
+        privileged = True
+
+        json_hmis[container_name] = {
+            "build": build,
+            "container_name": container_name,
+            "privileged": privileged,
+            "command": ["python3", "-u", "hmi.py"]
+        }
+
+        # add inbound connection info
+        found_ip = False
+        json_hmis[container_name]["volumes"] = []
+        for connection in hmi["inbound_connections"]:
+            if connection["type"] == "tcp":
+                ip = connection["ip"]
+
+                # find network info that the ip fits into
+                network_docker_name = ""
+                for network in json_content["ip_networks"]:
+                    if ipaddress.ip_address(ip) in ipaddress.ip_network(network["subnet"], strict=False):
+                        network_docker_name = network["docker_name"]
+
+                        # check if more than one IP is given
+                        if found_ip:
+                            raise KeyError("More than one inbound IP specified")
+                        break
+
+                # throw exception if no valid network exists
+                if network_docker_name == "":
+                    raise KeyError(f"No valid network exists for this component: {container_name}")
+
+                json_hmis[container_name]["networks"] = {
+                    network_docker_name: {
+                        "ipv4_address": ip
+                    }
+                }
+                found_ip = True
+            elif connection["type"] == "rtu":
+                # add comm port as a volume
+                comm_port = connection["comm_port"]
+                json_hmis[container_name]["volumes"].append(
+                    f"{root_path}/simulation/communications/{comm_port}:/src/{comm_port}"
+                )
+
+        # add outbound connection info (only relevant for rtu)
+        for connection in hmi["outbound_connections"]:
+            if connection["type"] == "rtu":
+                # add comm port as a volume
+                comm_port = connection["comm_port"]
+                json_hmis[container_name]["volumes"].append(
+                    f"{root_path}/simulation/communications/{comm_port}:/src/{comm_port}"
+                )
+
+        # add ip address
+        ip = hmi["network"]["ip"]
+        docker_network = hmi["network"]["docker_network"]
+        json_hmis[container_name]["networks"] = {}
+        json_hmis[container_name]["networks"][docker_network] = {}
+        json_hmis[container_name]["networks"][docker_network]["ipv4_address"] = ip
+
+        # export ports (1111 for UI, 5020 for modbus)
+        json_hmis[container_name]["ports"] = []
+        json_hmis[container_name]["ports"].append(1111)
+        json_hmis[container_name]["ports"].append(5020)
+    return json_hmis
+
 # FUNCTION: build_sensor_yaml
 # PURPOSE:  Builds the section of the YAML file for the sensors
 def build_sensor_yaml(json_content):
@@ -309,6 +386,32 @@ def build_ui_directory(json_content):
     shutil.copy(f"{root_path}/src/components/ui.py", f"{root_path}/simulation/containers/ui/src")
 
 
+# FUNCTION: build_hmi_directory
+# PURPOSE:  Creates the hmi directory
+def build_hmi_directory(json_content):
+    root_path = Path(__file__).resolve().parent.parent
+
+    # create hmi directories
+    for hmi in json_content["hmis"]:
+        Path(f"{root_path}/simulation/containers/{hmi['name']}").mkdir()
+        Path(f"{root_path}/simulation/containers/{hmi['name']}/src").mkdir()
+        shutil.copy(f"{root_path}/src/docker-files/component/Dockerfile", f"{root_path}/simulation/containers/{hmi['name']}")
+        
+        # create JSON configuration and write into directory
+        json_config = {
+            "inbound_connections": hmi["inbound_connections"],
+            "outbound_connections": hmi["outbound_connections"],
+            "values": hmi["values"],
+            "monitors": hmi["monitors"],
+            "controllers": hmi["controllers"]
+        }
+        with open(f"{root_path}/simulation/containers/{hmi['name']}/src/config.json", "w") as conf_file:
+            conf_file.write(json.dumps(json_config, indent=4))
+
+        # copy hmi code
+        shutil.copy(f"{root_path}/src/components/hmi.py", f"{root_path}/simulation/containers/{hmi['name']}/src")
+
+
 # FUNCTION: build_plc_directory
 # PURPOSE:  Creates the plc directory
 def build_plc_directory(json_content):
@@ -430,6 +533,7 @@ def create_containers(json_content):
 
     # create directories for all component containers
     build_ui_directory(json_content)
+    build_hmi_directory(json_content)
     build_plc_directory(json_content)
     build_sensor_directory(json_content)
     build_actuator_directory(json_content)

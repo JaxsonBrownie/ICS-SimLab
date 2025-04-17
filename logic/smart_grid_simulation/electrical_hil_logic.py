@@ -7,7 +7,6 @@ from threading import Thread
 def logic(physical_values, interval):
     # initial values
     physical_values["solar_power"] = 0
-    print(physical_values)
 
     mean = 0
     std_dev = 1
@@ -17,20 +16,15 @@ def logic(physical_values, interval):
     x_values = np.linspace(mean - 4*std_dev, mean + 4*std_dev, entries)
     y_values = height * np.exp(-0.5 * ((x_values - mean) / std_dev) ** 2)
 
-    solar_power_thread = Thread(target=solar_power_sim, args=(y_values, physical_values, entries))
-    solar_power_thread.daemon = True
+    solar_power_thread = Thread(target=solar_power_sim, args=(y_values, physical_values, entries), daemon=True)
     solar_power_thread.start()
 
-    transfer_switch_thread = Thread(target=transfer_switch_sim, args=(physical_values,))
-    transfer_switch_thread.daemon = True
+    transfer_switch_thread = Thread(target=transfer_switch_sim, args=(physical_values,), daemon=True)
     transfer_switch_thread.start()
 
 
 def transfer_switch_sim(physical_values):
     while True:
-        #print(physical_values["transfer_switch_state"])
-        #print(physical_values["solar_power"])
-        #print(physical_values["input_power"])
         if physical_values["transfer_switch_state"] == True:
             physical_values["input_power"] = physical_values["solar_power"]
         else:
