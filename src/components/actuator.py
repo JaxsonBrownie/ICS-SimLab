@@ -25,7 +25,7 @@ register_values = {}
 try:
     import logic # type: ignore
 except ModuleNotFoundError:
-    print("Could not import logic for Actuator component")
+    logging.error("Could not import logic for Actuator component")
 
 # FUNCTION: retrieve_configs
 # PURPOSE:  Retrieves the JSON configs
@@ -41,7 +41,7 @@ def retrieve_configs(filename):
 async def run_tcp_server(connection, context):
     # bind to all interfaces of the container
     tcp_server = ModbusTcpServer(context=context, address=("0.0.0.0", connection["port"]), ) 
-    print("Starting tcp")
+    logging.info("Starting TCP Server")
     await tcp_server.serve_forever()
 
 
@@ -49,7 +49,7 @@ async def run_tcp_server(connection, context):
 # PURPOSE:  An asynchronous function to use for modbus rtu server
 async def run_rtu_slave(connection, context):
     rtu_slave = ModbusSerialServer(context=context, port=connection["comm_port"], baudrate=9600, timeout=1)
-    print(f"Starting rtu slave on port {connection['comm_port']}")
+    logging.info(f"Starting RTU Slave. Port: {connection['comm_port']}")
     await rtu_slave.serve_forever()
 
 

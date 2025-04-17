@@ -34,7 +34,7 @@ def retrieve_configs(filename):
 async def run_tcp_server(connection, context):
     # bind to all interfaces of the container
     tcp_server = ModbusTcpServer(context=context, address=("0.0.0.0", connection["port"]), ) 
-    print("Starting tcp server")
+    logging.info("Starting TCP Server")
     await tcp_server.serve_forever()
 
 
@@ -42,7 +42,7 @@ async def run_tcp_server(connection, context):
 # PURPOSE:  An asynchronous function to use for modbus rtu server
 async def run_rtu_slave(connection, context):
     rtu_slave = ModbusSerialServer(context=context, port=connection["comm_port"], baudrate=9600, timeout=1)
-    print("Starting rtu slave")
+    logging.info("Starting RTU slave")
     await rtu_slave.serve_forever
 
 
@@ -50,7 +50,7 @@ async def run_rtu_slave(connection, context):
 # PURPOSE:  Creates a tcp client
 def run_tcp_client(connection):
     tcp_client = ModbusTcpClient(host=connection["ip"], port=connection["port"])
-    print("Starting tcp client")
+    logging.info(f"Starting TCP Client. IP: {connection['ip']}")
     tcp_client.connect()
     return tcp_client
 
@@ -59,7 +59,7 @@ def run_tcp_client(connection):
 # PURPOSE:  Create an rtu master connection
 def run_rtu_master(connection):
     rtu_master = ModbusSerialClient(port=connection["comm_port"], baudrate=9600, timeout=1)
-    print("Starting rtu master")
+    logging.info(f"Starting RTU Master. Port: {connection['comm_port']}")
     rtu_master.connect()
     return rtu_master
 
@@ -99,7 +99,7 @@ def init_outbound_cons(configs):
 # FUNCTION: monitor
 # PURPOSE:  A monitor thread to continuously read data from a defined and intialised connection
 def monitor(value_config, monitor_configs, modbus_con, values):
-    print(f"Starting monitor: {monitor_configs['id']}")
+    logging.info(f"Starting Monitor: {monitor_configs['id']}")
     interval = monitor_configs["interval"]
     value_type = monitor_configs["value_type"]
     out_address = monitor_configs["address"]
@@ -120,10 +120,8 @@ def monitor(value_config, monitor_configs, modbus_con, values):
             elif value_type == "input_register":
                 response_values = modbus_con.read_input_registers(out_address-1, count).registers
                 values["ir"].setValues(value_config["address"], response_values)
-            
-            print(response_values)
         except:
-            print("Error: couldn't read values")
+            logging.error("Error: couldn't read values")
 
 
         time.sleep(interval)
