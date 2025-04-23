@@ -19,7 +19,14 @@
                 "ip": "192.168.0.21",
                 "docker_network": "vlan1"
             },
-            "inbound_connections": [],
+            "inbound_connections":
+            [
+                {
+                    "type": "tcp",
+                    "ip": "192.168.0.21",
+                    "port": 5020
+                }
+            ],
             "outbound_connections":
             [
                 {
@@ -126,6 +133,12 @@
                     "type": "rtu",
                     "comm_port": "ttyS11",
                     "id": "conveyor_belt_con"
+                },
+                {
+                    "type": "tcp",
+                    "ip": "192.168.0.21",
+                    "port": "5020",
+                    "id": "plc1_con"
                 }
             ],
             "values":
@@ -137,6 +150,12 @@
                         "count": 1,
                         "io": "output",
                         "id": "conveyor_engine_state"
+                    },
+                    {
+                        "address": 11,
+                        "count": 1,
+                        "io": "output",
+                        "id": "plc1_tank_output_state"
                     }
                 ],
                 "discrete_input": [],
@@ -186,6 +205,15 @@
                     "value_type": "coil",
                     "slave_id": 1,
                     "address": 30,
+                    "count": 1,
+                    "interval": 1
+                },
+                {
+                    "outbound_connection_id": "plc1_con",
+                    "id": "plc1_tank_output_state",
+                    "value_type": "coil",
+                    "slave_id": "1",
+                    "address": 2,
                     "count": 1,
                     "interval": 1
                 }

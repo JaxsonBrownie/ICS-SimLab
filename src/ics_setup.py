@@ -93,11 +93,16 @@ def build_ui_yaml(json_content):
     docker_network = json_content["ui"]["network"]["docker_network"]
     privileged = True
 
+    # add the SQLite database as a volume in the src/ directory
+    volumes = []
+    volumes.append(f"{root_path}/simulation/communications/physical_interactions.db:/src/physical_interactions.db")
+
     json_ui["ui"] = {
         "build": build,
         "container_name": "ui",
         "privileged": privileged,
         "ports": [port, 1111],
+        "volumes": volumes,
         "command": ["streamlit", "run", "ui.py", f"--server.port={port}", "--server.address=0.0.0.0"],
     }
     json_ui["ui"]["networks"] = {}
@@ -277,7 +282,7 @@ def build_sensor_yaml(json_content):
 
         # add the SQLite database as a volume in the src/ directory
         volumes = []
-        volumes.append(f"{root_path}/simulation/communications/physical_interations.db:/src/physical_interations.db")
+        volumes.append(f"{root_path}/simulation/communications/physical_interactions.db:/src/physical_interactions.db")
 
         # add any virtual serial port
         for connection in sensor["inbound_connections"]:
@@ -321,7 +326,7 @@ def build_actuator_yaml(json_content):
         
         # add the SQLite database as a volume in the src/ directory
         volumes = []
-        volumes.append(f"{root_path}/simulation/communications/physical_interations.db:/src/physical_interations.db")
+        volumes.append(f"{root_path}/simulation/communications/physical_interactions.db:/src/physical_interactions.db")
 
         # add any virtual serial port to the volumes
         for connection in actuator["inbound_connections"]:
@@ -365,7 +370,7 @@ def build_hil_yaml(json_content):
 
         # add the SQLite database as a volume in the src/ directory
         volumes = []
-        volumes.append(f"{root_path}/simulation/communications/physical_interations.db:/src/physical_interations.db")
+        volumes.append(f"{root_path}/simulation/communications/physical_interactions.db:/src/physical_interactions.db")
 
         json_hils[container_name] = {
             "build": build,
@@ -566,7 +571,7 @@ def create_communications(json_content):
     Path(f"{root_path}/simulation/communications").mkdir()
 
     # create hardware SQLite database
-    conn = sqlite3.connect(f"{root_path}/simulation/communications/physical_interations.db")
+    conn = sqlite3.connect(f"{root_path}/simulation/communications/physical_interactions.db")
     
     # create tables for the HIL components in the SQLite database
     cursor = conn.cursor()

@@ -6,6 +6,8 @@ services:
     ports:
     - 8501
     - 1111
+    volumes:
+    - /home/jaxson/Documents/IndustrialControlSystems/ICS-SimLab/simulation/communications/physical_interactions.db:/src/physical_interactions.db
     command:
     - streamlit
     - run
@@ -56,7 +58,7 @@ services:
     container_name: tank_level_sensor
     privileged: true
     volumes:
-    - /home/jaxson/Documents/IndustrialControlSystems/ICS-SimLab/simulation/communications/physical_interations.db:/src/physical_interations.db
+    - /home/jaxson/Documents/IndustrialControlSystems/ICS-SimLab/simulation/communications/physical_interactions.db:/src/physical_interactions.db
     - /home/jaxson/Documents/IndustrialControlSystems/ICS-SimLab/simulation/communications/ttyS2:/src/ttyS2
     command:
     - python3
@@ -73,7 +75,7 @@ services:
     container_name: bottle_level_sensor
     privileged: true
     volumes:
-    - /home/jaxson/Documents/IndustrialControlSystems/ICS-SimLab/simulation/communications/physical_interations.db:/src/physical_interations.db
+    - /home/jaxson/Documents/IndustrialControlSystems/ICS-SimLab/simulation/communications/physical_interactions.db:/src/physical_interactions.db
     - /home/jaxson/Documents/IndustrialControlSystems/ICS-SimLab/simulation/communications/ttyS8:/src/ttyS8
     command:
     - python3
@@ -90,7 +92,7 @@ services:
     container_name: bottle_distance_to_filler_sensor
     privileged: true
     volumes:
-    - /home/jaxson/Documents/IndustrialControlSystems/ICS-SimLab/simulation/communications/physical_interations.db:/src/physical_interations.db
+    - /home/jaxson/Documents/IndustrialControlSystems/ICS-SimLab/simulation/communications/physical_interactions.db:/src/physical_interactions.db
     - /home/jaxson/Documents/IndustrialControlSystems/ICS-SimLab/simulation/communications/ttyS10:/src/ttyS10
     command:
     - python3
@@ -107,7 +109,7 @@ services:
     container_name: tank_input_valve
     privileged: true
     volumes:
-    - /home/jaxson/Documents/IndustrialControlSystems/ICS-SimLab/simulation/communications/physical_interations.db:/src/physical_interations.db
+    - /home/jaxson/Documents/IndustrialControlSystems/ICS-SimLab/simulation/communications/physical_interactions.db:/src/physical_interactions.db
     - /home/jaxson/Documents/IndustrialControlSystems/ICS-SimLab/simulation/communications/ttyS4:/src/ttyS4
     command:
     - python3
@@ -124,7 +126,7 @@ services:
     container_name: tank_output_valve
     privileged: true
     volumes:
-    - /home/jaxson/Documents/IndustrialControlSystems/ICS-SimLab/simulation/communications/physical_interations.db:/src/physical_interations.db
+    - /home/jaxson/Documents/IndustrialControlSystems/ICS-SimLab/simulation/communications/physical_interactions.db:/src/physical_interactions.db
     - /home/jaxson/Documents/IndustrialControlSystems/ICS-SimLab/simulation/communications/ttyS6:/src/ttyS6
     command:
     - python3
@@ -141,7 +143,7 @@ services:
     container_name: conveyor_belt_engine
     privileged: true
     volumes:
-    - /home/jaxson/Documents/IndustrialControlSystems/ICS-SimLab/simulation/communications/physical_interations.db:/src/physical_interations.db
+    - /home/jaxson/Documents/IndustrialControlSystems/ICS-SimLab/simulation/communications/physical_interactions.db:/src/physical_interactions.db
     - /home/jaxson/Documents/IndustrialControlSystems/ICS-SimLab/simulation/communications/ttyS12:/src/ttyS12
     command:
     - python3
@@ -158,7 +160,7 @@ services:
     container_name: bottle_factory
     privileged: true
     volumes:
-    - /home/jaxson/Documents/IndustrialControlSystems/ICS-SimLab/simulation/communications/physical_interations.db:/src/physical_interations.db
+    - /home/jaxson/Documents/IndustrialControlSystems/ICS-SimLab/simulation/communications/physical_interactions.db:/src/physical_interactions.db
     command:
     - python3
     - -u

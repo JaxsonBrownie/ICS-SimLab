@@ -115,7 +115,7 @@ def update_register_values(register_values, values):
 #           database to simulate the actuator affecting the physical environment.
 def database_interaction(configs, physical_values):
     # connect to hardware SQLite database
-    conn = sqlite3.connect("physical_interations.db")
+    conn = sqlite3.connect("physical_interactions.db")
     cursor = conn.cursor()
     table = configs["database"]["table"]
 

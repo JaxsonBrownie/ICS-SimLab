@@ -34,7 +34,7 @@ def retrieve_configs(filename):
 #           interactions.
 def database_interaction(configs, physical_values):
     # connect to hardware SQLite database
-    conn = sqlite3.connect("physical_interations.db")
+    conn = sqlite3.connect("physical_interactions.db")
     cursor = conn.cursor()
     table = configs["database"]["table"]
 
@@ -54,7 +54,7 @@ def database_interaction(configs, physical_values):
 # PURPOSE:  Monitors physical database interactions for input interactions.
 def monitor_physical_inputs(configs, physical_values):
     # connect to hardware SQLite database
-    conn = sqlite3.connect("physical_interations.db")
+    conn = sqlite3.connect("physical_interactions.db")
     cursor = conn.cursor()
     table = configs["database"]["table"]
 

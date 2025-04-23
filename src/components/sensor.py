@@ -69,7 +69,7 @@ async def start_servers(configs, context):
 #           di, hr, and ir as keys.
 def start_sensor(configs, values):
     # connect to hardware SQLite database
-    conn = sqlite3.connect("physical_interations.db")
+    conn = sqlite3.connect("physical_interactions.db")
     cursor = conn.cursor()
     table = configs["database"]["table"]
 

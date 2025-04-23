@@ -43,7 +43,7 @@ def retrieve_configs(filename):
 async def run_tcp_server(connection, context):
     # bind to all interfaces of the container
     tcp_server = ModbusTcpServer(context=context, address=("0.0.0.0", connection["port"]), ) 
-    logging.info("Starting TCP Server")
+    logging.info(f"Starting TCP Server. IP: {connection['ip']}, Port: {connection['port']}")
     await tcp_server.serve_forever()
 
 
@@ -51,7 +51,7 @@ async def run_tcp_server(connection, context):
 # PURPOSE:  An asynchronous function to use for modbus rtu server
 async def run_rtu_slave(connection, context):
     rtu_slave = ModbusSerialServer(context=context, port=connection["comm_port"], baudrate=9600, timeout=1)
-    logging.info("Starting RTU Slave")
+    logging.info(f"Starting RTU Slave. Port: {connection['comm_port']}")
     await rtu_slave.serve_forever()
 
 
@@ -59,7 +59,7 @@ async def run_rtu_slave(connection, context):
 # PURPOSE:  Creates a tcp client
 def run_tcp_client(connection):
     tcp_client = ModbusTcpClient(host=connection["ip"], port=connection["port"])
-    logging.info("Starting TCP Client")
+    logging.info(f"Starting TCP Client. IP: {connection['ip']}, Port: {connection['port']}")
     tcp_client.connect()
     return tcp_client
 
@@ -68,7 +68,7 @@ def run_tcp_client(connection):
 # PURPOSE:  Create an rtu master connection
 def run_rtu_master(connection):
     rtu_master = ModbusSerialClient(port=connection["comm_port"], baudrate=9600, timeout=1)
-    logging.info("Starting RTU Master")
+    logging.info(f"Starting RTU Master. Port: {connection['comm_port']}")
     rtu_master.connect()
     return rtu_master
 
@@ -96,6 +96,9 @@ async def init_inbound_cons(configs, context):
 def init_outbound_cons(configs):
     connections = {}
     for connection in configs["outbound_connections"]:
+        # pause for each connections to wait for corresponding input server to start
+        # TODO: optimise somehow (make a system that waits for all containers to boot up)
+        time.sleep(0.5)
         if connection["type"] == "tcp":
             client = run_tcp_client(connection)
             connections[connection["id"]] = client
@@ -415,10 +418,8 @@ async def main():
     values = {"co": co, "di": di, "hr": hr, "ir": ir}
     inbound_cons = asyncio.create_task(init_inbound_cons(configs, context))
 
-    # start any outbound connections, waiting 2 seconds to ensure connections are up
-    time.sleep(2)
+    # start any outbound connections
     outbound_cons = init_outbound_cons(configs)
-    time.sleep(1)
 
     # start any configured monitors using the started outbound connections
     monitor_threads = start_monitors(configs, outbound_cons, values)
@@ -435,8 +436,8 @@ async def main():
     # start a thread to continously update the input and output registers dictionaries
     sync_in_registers = Thread(target=update_register_values, args=(input_reg_values, values), daemon=True)
     sync_in_registers.start()
-    #sync_out_registers = Thread(target=update_register_values, args=(output_reg_values, values), daemon=True)
-    #sync_out_registers.start()
+    sync_out_registers = Thread(target=update_register_values, args=(output_reg_values, values), daemon=True)
+    sync_out_registers.start()
 
     # start the logic thread, passing in the input registers, output registers, and modbus controlling callback functions
     logic_thread = Thread(target=logic.logic, args=(input_reg_values, output_reg_values, controller_callbacks), daemon=True)
@@ -446,7 +447,7 @@ async def main():
     flask_thread = Thread(target=flask_app, args=(app,), daemon=True)
     flask_thread.start()
 
-    # block on the asyncio and regula
+    # block on the asyncio and threads
     await inbound_cons
     for monitor_thread in monitor_threads:
         monitor_thread.join()
@@ -454,7 +455,7 @@ async def main():
         outbound_con.close()
     logic_thread.join()
     sync_in_registers.join()
-    #sync_out_registers.join()
+    sync_out_registers.join()
     flask_thread.join()
     
     # block (useful if no servers or monitors are made)

@@ -8,7 +8,7 @@ import requests
 import json
 import time
 import asyncio
-import logging
+import sqlite3
 import streamlit as st
 import pandas as pd
                   
@@ -28,6 +28,7 @@ def get_component_info(configs):
     plc_info = []
     sensor_info = []
     actuator_info = []
+    hil_info = []
 
     if "hmis" in configs:
         for hmi in configs["hmis"]:
@@ -54,7 +55,13 @@ def get_component_info(configs):
                 "name": actuator["name"],
                 "ip": actuator["network"]["ip"],
             })
-    return hmi_info, plc_info, sensor_info, actuator_info
+    if "hils" in configs:
+        for hil in configs["hils"]:
+            hil_info.append({
+                "name": hil["name"]
+            })
+
+    return hmi_info, plc_info, sensor_info, actuator_info, hil_info
 
 
 # FUNCTION: create_register_table_rows
@@ -114,13 +121,9 @@ async def main():
         # retrieve configurations from the given JSON (will be in the same directory)
         configs = retrieve_configs("config.json")
 
-        # get all TCP/IP component info (name: ip)
-        hmi_info, plc_info, sensor_info, actuator_info = get_component_info(configs)
+        # get all component info. for Modbus (name, ip), for physical (column_name)
+        hmi_info, plc_info, sensor_info, actuator_info, hil_info = get_component_info(configs)
         st.session_state['config_loaded'] = True
-
-        # get the physical components (SQLite3)
-        #TODO:
-
 
     # render everything first  
     st.title("Industrial Control System Dashboard")
@@ -157,7 +160,14 @@ async def main():
     st.subheader("Output Registers") 
     actuators = {}
     for actuator in actuator_info:
-        actuators[actuator["name"]] = st.empty() 
+        actuators[actuator["name"]] = st.empty()
+    
+    st.divider()
+    st.header("Hardware-in-the-Loops") 
+    st.subheader("Physical Values") 
+    hils = {}
+    for hil in hil_info:
+        hils[hil["name"]] = st.empty() 
 
     # have a single event loop for API polling (streamlit sucks for multi threaded stuff)
     while True:
@@ -221,7 +231,14 @@ async def main():
                 use_container_width=False
             )
 
-        # poll the physical
+        # poll the physical hil (through the SQLite3 database)
+        for hil in hil_info:
+            conn = sqlite3.connect("physical_interactions.db")
+            df = pd.read_sql_query(f"SELECT * FROM {hil['name']}", conn)
+            conn.close()
+            hils[hil["name"]].dataframe(df)
+
+        
 
         time.sleep(1)
 
