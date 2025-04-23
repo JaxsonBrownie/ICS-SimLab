@@ -5,7 +5,7 @@
 
 import subprocess
 import argparse
-from src import ics_setup
+from src import setup
 from pathlib import Path
 
 if __name__ == "__main__":
@@ -22,7 +22,7 @@ if __name__ == "__main__":
 
     # build everything
     print("BUILDING SIMULATION FILES")
-    ics_setup.build(args.directory)
+    setup.build(args.directory)
 
     # build images
     print("BUILDING IMAGES")
