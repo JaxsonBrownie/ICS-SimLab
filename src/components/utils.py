@@ -5,7 +5,9 @@
 
 import json
 import time
-
+import logging
+from pymodbus.client import ModbusTcpClient, ModbusSerialClient
+from pymodbus.server import ModbusTcpServer, ModbusSerialServer
 
 
 # FUNCTION: retrieve_configs
@@ -15,6 +17,45 @@ def retrieve_configs(filename):
         content = config_file.read()
         configs = json.loads(content)
     return configs
+
+
+
+# FUNCTION: run_tcp_server
+# PURPOSE:  An asynchronous function to be used to start a modbus tcp server. Blocks on the server.
+async def run_tcp_server(connection, context):
+    # bind to all interfaces of the container
+    tcp_server = ModbusTcpServer(context=context, address=("0.0.0.0", connection["port"]), ) 
+    logging.info(f"Starting TCP Server. IP: {connection['ip']}, Port: {connection['port']}")
+    await tcp_server.serve_forever()
+
+
+
+# FUNCTION: run_rtu_slave
+# PURPOSE:  An asynchronous function to use for modbus rtu server. Blocks on the server.
+async def run_rtu_slave(connection, context):
+    rtu_slave = ModbusSerialServer(context=context, port=connection["comm_port"], baudrate=9600, timeout=1)
+    logging.info(f"Starting RTU Slave. Port: {connection['comm_port']}")
+    await rtu_slave.serve_forever()
+
+
+
+# FUNCTION: run_tcp_client
+# PURPOSE:  Creates a tcp client
+def run_tcp_client(connection):
+    tcp_client = ModbusTcpClient(host=connection["ip"], port=connection["port"])
+    logging.info(f"Starting TCP Client. IP: {connection['ip']}, Port: {connection['port']}")
+    tcp_client.connect()
+    return tcp_client
+
+
+
+# FUNCTION: run_rtu_master
+# PURPOSE:  Create an rtu master connection
+def run_rtu_master(connection):
+    rtu_master = ModbusSerialClient(port=connection["comm_port"], baudrate=9600, timeout=1)
+    logging.info(f"Starting RTU Master. Port: {connection['comm_port']}")
+    rtu_master.connect()
+    return rtu_master
 
 
 

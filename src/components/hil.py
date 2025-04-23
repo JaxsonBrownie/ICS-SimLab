@@ -3,11 +3,11 @@
 # FILE: hil.py
 # PURPOSE: Simulates the physical layer. Data is written to the SQLite database to represent physical data collection
 
-import json
 import asyncio
 import sqlite3
 import logging
 import time
+import utils
 from threading import Thread
 
 logging.basicConfig(level=logging.INFO, format='%(levelname)s - %(message)s')
@@ -20,13 +20,6 @@ try:
 except ModuleNotFoundError:
     logging.error("Could not import logic for HIL component")
 
-# FUNCTION: retrieve_configs
-# PURPOSE:  Retrieves the JSON configs
-def retrieve_configs(filename):
-    with open(filename, "r") as config_file:
-        content = config_file.read()
-        configs = json.loads(content)
-    return configs
 
 
 # FUNCTION: database_interaction
@@ -48,6 +41,7 @@ def database_interaction(configs, physical_values):
                 """, (physical_values[physical_value['name']], physical_value['name']))
                 conn.commit()
         time.sleep(0.1)
+
 
 
 # FUNCTION: monitor_physical_inputs
@@ -74,10 +68,11 @@ def monitor_physical_inputs(configs, physical_values):
         time.sleep(0.1)
 
 
+
 # FUNCTION: main
 # PURPOSE:  The main execution
 async def main():
-    configs = retrieve_configs("config.json")
+    configs = utils.retrieve_configs("config.json")
     logging.info(f"Starting HIL")
 
     # create a dictionary to represent the different physical values

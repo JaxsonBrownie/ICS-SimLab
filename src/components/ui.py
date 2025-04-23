@@ -21,6 +21,7 @@ def retrieve_configs(filename):
     return configs
 
 
+
 # FUNCTION: get_component_info
 # PURPOSE:  Returns all names and info for all the components in lists
 def get_component_info(configs):
@@ -64,6 +65,7 @@ def get_component_info(configs):
     return hmi_info, plc_info, sensor_info, actuator_info, hil_info
 
 
+
 # FUNCTION: create_register_table_rows
 # PURPOSE:  Builds up the table rows for the component registers
 def create_register_table_rows(type, address, count, value, response):
@@ -89,6 +91,7 @@ def create_register_table_rows(type, address, count, value, response):
         value.append(hr["value"])
 
 
+
 # FUNCTION: create_register_table
 # PURPOSE:  Creates a dataframe for the component register table
 def create_register_table(response):
@@ -104,6 +107,7 @@ def create_register_table(response):
             "value": value
         })
     return dataframe.astype(str)
+
 
 
 # FUNCTION: main

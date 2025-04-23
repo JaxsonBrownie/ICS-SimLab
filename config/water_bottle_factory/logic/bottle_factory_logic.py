@@ -67,5 +67,5 @@ def bottle_filling_thread(physical_values):
 # printing thread
 def print_values(physical_values):
     while True:
-        print(physical_values)
+        #print(physical_values)
         time.sleep(1)

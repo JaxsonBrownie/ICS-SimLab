@@ -4,7 +4,6 @@
 # PURPOSE:  Simulates an actuators. Can read and write to a HIL physical environment.
 
 import logging
-import json
 import asyncio
 import time
 import sqlite3
@@ -31,24 +30,6 @@ except ModuleNotFoundError:
 
 
 
-
-# FUNCTION: run_tcp_server
-# PURPOSE:  An asynchronous function to be used to start a modbus tcp server
-async def run_tcp_server(connection, context):
-    # bind to all interfaces of the container
-    tcp_server = ModbusTcpServer(context=context, address=("0.0.0.0", connection["port"]), ) 
-    logging.info("Starting TCP Server")
-    await tcp_server.serve_forever()
-
-
-# FUNCTION: run_rtu_slave
-# PURPOSE:  An asynchronous function to use for modbus rtu server
-async def run_rtu_slave(connection, context):
-    rtu_slave = ModbusSerialServer(context=context, port=connection["comm_port"], baudrate=9600, timeout=1)
-    logging.info(f"Starting RTU Slave. Port: {connection['comm_port']}")
-    await rtu_slave.serve_forever()
-
-
 # FUNCTION: start_servers
 # PURPOSE:  Starts any tcp/rtu servers configured in the config file
 async def start_servers(configs, context):
@@ -56,12 +37,13 @@ async def start_servers(configs, context):
     for connection in configs["inbound_connections"]:
         if connection["type"] == "tcp":            
             # start tcp server thread
-            tasks.append(asyncio.create_task(run_tcp_server(connection, context)))
+            tasks.append(asyncio.create_task(utils.run_tcp_server(connection, context)))
         elif connection["type"] == "rtu":
             # start rtu slave thread
-            tasks.append(asyncio.create_task(run_rtu_slave(connection, context)))        
+            tasks.append(asyncio.create_task(utils.run_rtu_slave(connection, context)))        
     for task in tasks:
         await task
+
 
 
 # FUNCTION: update_register_values
