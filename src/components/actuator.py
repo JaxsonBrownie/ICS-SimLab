@@ -8,6 +8,7 @@ import json
 import asyncio
 import time
 import sqlite3
+import utils
 from flask import Flask, jsonify
 from threading import Thread
 from pymodbus.server import ModbusTcpServer, ModbusSerialServer
@@ -28,13 +29,7 @@ try:
 except ModuleNotFoundError:
     logging.error("Could not import logic for Actuator component")
 
-# FUNCTION: retrieve_configs
-# PURPOSE:  Retrieves the JSON configs
-def retrieve_configs(filename):
-    with open(filename, "r") as config_file:
-        content = config_file.read()
-        configs = json.loads(content)
-    return configs
+
 
 
 # FUNCTION: run_tcp_server
@@ -80,22 +75,22 @@ def update_register_values(register_values, values):
         # update the cloned copy with the real modbus values
         index = 0
         for co in register_values["coil"]:
-            modbus_value = values["co"].getValues(co["address"]+1, co["count"])[0]
+            modbus_value = values["co"].getValues(co["address"], co["count"])[0]
             updated_register_values["coil"][index]["value"] = modbus_value
             index += 1
         index = 0
         for di in register_values["discrete_input"]:
-            modbus_value = values["di"].getValues(di["address"]+1, di["count"])[0]
+            modbus_value = values["di"].getValues(di["address"], di["count"])[0]
             updated_register_values["discrete_input"][index]["value"] = modbus_value
             index += 1
         index = 0
         for hr in register_values["holding_register"]:
-            modbus_value = values["hr"].getValues(hr["address"]+1, hr["count"])[0]
+            modbus_value = values["hr"].getValues(hr["address"], hr["count"])[0]
             updated_register_values["holding_register"][index]["value"] = modbus_value
             index += 1
         index = 0
         for ir in register_values["input_register"]:
-            modbus_value = values["ir"].getValues(ir["address"]+1, ir["count"])[0]
+            modbus_value = values["ir"].getValues(ir["address"], ir["count"])[0]
             updated_register_values["input_register"][index]["value"] = modbus_value
             index += 1
         
@@ -104,7 +99,6 @@ def update_register_values(register_values, values):
         register_values["discrete_input"] = updated_register_values["discrete_input"].copy()
         register_values["holding_register"] = updated_register_values["holding_register"].copy()
         register_values["input_register"] = updated_register_values["input_register"].copy()
-
 
         time.sleep(0.2)
 
@@ -131,61 +125,7 @@ def database_interaction(configs, physical_values):
         time.sleep(0.1)
 
 
-# FUNCTION: create_register_values_dict
-# PURPOSE:  Returns a dictionary that is used to store all register values in the following format:
-# "register_values":
-# {
-#    "coil": []
-#    "discrete_input": []
-#    "holding_register": 
-#    [
-#        {
-#            "address": 170
-#            "count": 1
-#            "value": 3013
-#        }
-#    ]
-#    "input_register: []"
-# }
-def create_register_values_dict(configs):
-    register_values = {}
-    register_values["coil"] = []
-    register_values["discrete_input"] = []
-    register_values["holding_register"] = []
-    register_values["input_register"] = []
-    for co in configs["values"]["coil"]:
-        register_values["coil"].append(
-            {
-                "address": co["address"],
-                "count": co["count"],
-                "value": False
-            }
-        )
-    for di in configs["values"]["discrete_input"]:
-        register_values["discrete_input"].append(
-            {
-                "address": di["address"],
-                "count": di["count"],
-                "value": False
-            }
-        )
-    for hr in configs["values"]["holding_register"]:
-        register_values["holding_register"].append(
-            {
-                "address": hr["address"],
-                "count": hr["count"],
-                "value": 0
-            }
-        )
-    for ir in configs["values"]["input_register"]:
-        register_values["input_register"].append(
-            {
-                "address": ir["address"],
-                "count": ir["count"],
-                "value": 0
-            }
-        )
-    return register_values
+
 
 # define the flask endpoint
 @app.route("/registers", methods=['GET'])
@@ -203,7 +143,7 @@ async def main():
     global register_values
     
     # retrieve configurations from the given JSON (will be in the same directory)
-    configs = retrieve_configs("config.json")
+    configs = utils.retrieve_configs("config.json")
     logging.info("Starting Actuator")
 
     # create slave context
@@ -227,7 +167,7 @@ async def main():
     # create a dictionary to represent the different register values
     # we do this as we want to abstract the actual modbus registers
     # a sample of register_values could look like:
-    register_values = create_register_values_dict(configs)
+    register_values = utils.create_register_values_dict(configs)
 
     # start a thread to constantly update the "register_values" dictionary with the actual modbus register values
     sync_register_values = Thread(target=update_register_values, args=(register_values, values))

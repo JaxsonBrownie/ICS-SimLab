@@ -8,6 +8,7 @@ import json
 import asyncio
 import time
 import logging
+import utils
 from flask import Flask, jsonify
 from threading import Thread
 from pymodbus.client import ModbusTcpClient, ModbusSerialClient
@@ -29,13 +30,6 @@ try:
 except ModuleNotFoundError:
     logging.error("Could not import logic for PLC component")
 
-# FUNCTION: retrieve_configs
-# PURPOSE:  Retrieves the JSON configs
-def retrieve_configs(filename):
-    with open(filename, "r") as config_file:
-        content = config_file.read()
-        configs = json.loads(content)
-    return configs
 
 
 # FUNCTION: run_tcp_server
@@ -121,16 +115,16 @@ def monitor(value_config, monitor_configs, modbus_con, values):
         try:
             # select the correct function
             if value_type == "coil":
-                response_values = modbus_con.read_coils(out_address, count).bits
+                response_values = modbus_con.read_coils(out_address-1, count).bits
                 values["co"].setValues(value_config["address"], response_values)
             elif value_type == "discrete_input":
-                response_values = modbus_con.read_discrete_inputs(out_address, count).bits
+                response_values = modbus_con.read_discrete_inputs(out_address-1, count).bits
                 values["di"].setValues(value_config["address"], response_values)
             elif value_type == "holding_register":
-                response_values = modbus_con.read_holding_registers(out_address, count).registers
+                response_values = modbus_con.read_holding_registers(out_address-1, count).registers
                 values["hr"].setValues(value_config["address"], response_values)
             elif value_type == "input_register":
-                response_values = modbus_con.read_input_registers(out_address, count).registers
+                response_values = modbus_con.read_input_registers(out_address-1, count).registers
                 values["ir"].setValues(value_config["address"], response_values)
         except:
             logging.error("Error: couldn't read values")
@@ -194,7 +188,7 @@ def make_writing_callback(configs, controller_config, output_reg_values, modbus_
             for output_reg in output_reg_values["coil"]:
                 if output_reg["id"] == controller_config["id"]:
                     # write to the modbus object
-                    modbus_con.write_coil(address=controller_config["address"],
+                    modbus_con.write_coil(address=controller_config["address"]-1,
                                             #slave=controller_config["slave_id"], #TODO
                                             value=output_reg["value"])
                     logging.info(f"Writing to controller {outbound_con_id}, to address {controller_config['address']} value {output_reg['value']}")
@@ -211,7 +205,7 @@ def make_writing_callback(configs, controller_config, output_reg_values, modbus_
                 for output_reg in output_reg_values["holding_register"]:
                     if output_reg["id"] == controller_config["id"]:
                         # write to the modbus object
-                        modbus_con.write_register(address=controller_config["address"],
+                        modbus_con.write_register(address=controller_config["address"]-1,
                                                 #slave=controller_config["slave_id"],
                                                 value=output_reg["value"])
                         logging.info(f"Writing to controller {outbound_con_id}, to address {controller_config['address']} value {output_reg['value']}")
@@ -239,109 +233,6 @@ def get_controller_callbacks(configs, outbound_cons, output_reg_values, values):
         controller_callbacks[controller_config["id"]] = callback
     return controller_callbacks
 
-
-# FUNCTION: update_register_values
-# PURPOSE:  Updates the "register_values" dictionary with the register values of the modbus server,
-#           which is in the "values" dictionary.
-def update_register_values(register_values, values):
-    while True:
-        # create a clone dictionary to hold the "to-be-updated" values
-        updated_register_values = register_values.copy()
-
-        # update the cloned copy with the real modbus values
-        index = 0
-        for co in register_values["coil"]:
-            modbus_value = values["co"].getValues(co["address"], co["count"])[0]
-            updated_register_values["coil"][index]["value"] = modbus_value
-            index += 1
-        index = 0
-        for di in register_values["discrete_input"]:
-            modbus_value = values["di"].getValues(di["address"], di["count"])[0]
-            updated_register_values["discrete_input"][index]["value"] = modbus_value
-            index += 1
-        index = 0
-        for hr in register_values["holding_register"]:
-            modbus_value = values["hr"].getValues(hr["address"], hr["count"])[0]
-            updated_register_values["holding_register"][index]["value"] = modbus_value
-            index += 1
-        index = 0
-        for ir in register_values["input_register"]:
-            modbus_value = values["ir"].getValues(ir["address"], ir["count"])[0]
-            updated_register_values["input_register"][index]["value"] = modbus_value
-            index += 1
-        
-        # update register values from the cloned copy
-        register_values["coil"] = updated_register_values["coil"].copy()
-        register_values["discrete_input"] = updated_register_values["discrete_input"].copy()
-        register_values["holding_register"] = updated_register_values["holding_register"].copy()
-        register_values["input_register"] = updated_register_values["input_register"].copy()
-
-        time.sleep(0.2)
-
-
-# FUNCTION: create_register_values_dict
-# PURPOSE:  Returns a dictionary that is used to store all register values in the following format:
-# "register_values":
-# {
-#    "coil": []
-#    "discrete_input": []
-#    "holding_register": 
-#    [
-#        {
-#            "address": 170
-#            "count": 1
-#            "value": 3013
-#        }
-#    ]
-#    "input_register: []"
-# }
-def create_register_values_dict(configs):
-    register_values = {}
-    register_values["coil"] = []
-    register_values["discrete_input"] = []
-    register_values["holding_register"] = []
-    register_values["input_register"] = []
-    for co in configs["values"]["coil"]:
-        register_values["coil"].append(
-            {
-                "address": co["address"],
-                "count": co["count"],
-                "io": co["io"],
-                "id": co["id"],
-                "value": False
-            }
-        )
-    for di in configs["values"]["discrete_input"]:
-        register_values["discrete_input"].append(
-            {
-                "address": di["address"],
-                "count": di["count"],
-                "io": di["io"],
-                "id": di["id"],
-                "value": False
-            }
-        )
-    for hr in configs["values"]["holding_register"]:
-        register_values["holding_register"].append(
-            {
-                "address": hr["address"],
-                "count": hr["count"],
-                "io": hr["io"],
-                "id": hr["id"],
-                "value": 0
-            }
-        )
-    for ir in configs["values"]["input_register"]:
-        register_values["input_register"].append(
-            {
-                "address": ir["address"],
-                "count": ir["count"],
-                "io": ir["io"],
-                "id": ir["id"],
-                "value": 0
-            }
-        )
-    return register_values
 
 
 # FUNCTION: separate_io_registers
@@ -403,7 +294,7 @@ async def main():
     global register_values
 
     # retrieve configurations from the given JSON (will be in the same directory)
-    configs = retrieve_configs("config.json")
+    configs = utils.retrieve_configs("config.json")
     logging.info(f"Starting PLC")
 
     # create slave context (by default will have all address ranges)
@@ -425,7 +316,7 @@ async def main():
     monitor_threads = start_monitors(configs, outbound_cons, values)
 
     # create a dictionary representing all register values
-    register_values = create_register_values_dict(configs)
+    register_values = utils.create_register_values_dict(configs)
 
     # separate the register values into input and output registers
     input_reg_values, output_reg_values = separate_io_registers(register_values)
@@ -434,9 +325,9 @@ async def main():
     controller_callbacks = get_controller_callbacks(configs, outbound_cons, output_reg_values, values)
 
     # start a thread to continously update the input and output registers dictionaries
-    sync_in_registers = Thread(target=update_register_values, args=(input_reg_values, values), daemon=True)
+    sync_in_registers = Thread(target=utils.update_register_values, args=(input_reg_values, values), daemon=True)
     sync_in_registers.start()
-    sync_out_registers = Thread(target=update_register_values, args=(output_reg_values, values), daemon=True)
+    sync_out_registers = Thread(target=utils.update_register_values, args=(output_reg_values, values), daemon=True)
     sync_out_registers.start()
 
     # start the logic thread, passing in the input registers, output registers, and modbus controlling callback functions

@@ -213,7 +213,7 @@
                     "id": "plc1_tank_output_state",
                     "value_type": "coil",
                     "slave_id": "1",
-                    "address": 2,
+                    "address": 3,
                     "count": 1,
                     "interval": 1
                 }

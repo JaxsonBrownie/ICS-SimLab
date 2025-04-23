@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
-# FILE: ics_setup.py
-# PURPOSE: Parses the configuration JSON file into a Docker Compose YAML file
+# FILE: setup.py
+# PURPOSE: Handles createing and building the simulation.
 
 import yaml
 import json
@@ -426,6 +426,7 @@ def build_hmi_directory(json_content):
 
         # copy hmi code
         shutil.copy(f"{root_path}/src/components/hmi.py", f"{root_path}/simulation/containers/{hmi['name']}/src")
+        shutil.copy(f"{root_path}/src/components/utils.py", f"{root_path}/simulation/containers/{hmi['name']}/src")
 
 
 # FUNCTION: build_plc_directory
@@ -454,6 +455,7 @@ def build_plc_directory(json_content, directory):
         # copy PLC code and logic file
         logic_file = plc["logic"]
         shutil.copy(f"{directory}logic/{logic_file}", f"{root_path}/simulation/containers/{plc['name']}/src/logic.py")
+        shutil.copy(f"{root_path}/src/components/utils.py", f"{root_path}/simulation/containers/{plc['name']}/src")
         shutil.copy(f"{root_path}/src/components/plc.py", f"{root_path}/simulation/containers/{plc['name']}/src")
 
 
@@ -482,6 +484,7 @@ def build_sensor_directory(json_content):
 
         # copy sensor code
         shutil.copy(f"{root_path}/src/components/sensor.py", f"{root_path}/simulation/containers/{sensor['name']}/src")
+        shutil.copy(f"{root_path}/src/components/utils.py", f"{root_path}/simulation/containers/{sensor['name']}/src")
 
 
 # FUNCTION: build_actuator_directory
@@ -512,6 +515,7 @@ def build_actuator_directory(json_content, directory):
         logic_file = actuator["logic"]
         shutil.copy(f"{directory}logic/{logic_file}", f"{root_path}/simulation/containers/{actuator['name']}/src/logic.py")
         shutil.copy(f"{root_path}/src/components/actuator.py", f"{root_path}/simulation/containers/{actuator['name']}/src")
+        shutil.copy(f"{root_path}/src/components/utils.py", f"{root_path}/simulation/containers/{actuator['name']}/src")
 
 
 # FUNCTION: build_hil_directory
@@ -539,6 +543,7 @@ def build_hil_directory(json_content, directory):
         logic_file = hil["logic"]
         shutil.copy(f"{directory}logic/{logic_file}", f"{root_path}/simulation/containers/{hil['name']}/src/logic.py")
         shutil.copy(f"{root_path}/src/components/hil.py", f"{root_path}/simulation/containers/{hil['name']}/src")
+        shutil.copy(f"{root_path}/src/components/utils.py", f"{root_path}/simulation/containers/{hil['name']}/src")
 
 
 # FUNCTION: create_containers
