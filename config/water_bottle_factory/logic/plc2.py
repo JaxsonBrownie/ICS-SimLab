@@ -26,7 +26,6 @@ def logic(input_registers, output_registers, state_update_callbacks):
             state_update_callbacks["plc1_tank_output_state"]()
             conveyor_engine_state_ref["value"] = False
             state_update_callbacks["conveyor_engine_state"]()
-            #print("PLC2: FILLING THE BOTTLE")
             state = "filling"
 
         # stop filling and start conveyor
@@ -36,7 +35,6 @@ def logic(input_registers, output_registers, state_update_callbacks):
             state_update_callbacks["plc1_tank_output_state"]()
             conveyor_engine_state_ref["value"] = True
             state_update_callbacks["conveyor_engine_state"]()
-            #print("PLC2: BOTTLE IS FULL")
             state = "moving"
 
         # wait for conveyor to move the bottle

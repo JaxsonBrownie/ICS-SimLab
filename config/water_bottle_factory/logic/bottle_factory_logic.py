@@ -26,13 +26,13 @@ def logic(physical_values, interval):
     bottle_thread.start()
 
     # printing thread
-    info_thread = Thread(target=print_values, args=(physical_values,), daemon=True)
-    info_thread.start()
+    #info_thread = Thread(target=print_values, args=(physical_values,), daemon=True)
+    #info_thread.start()
 
     # block
     tank_thread.join()
     bottle_thread.join()
-    info_thread.join()
+    #info_thread.join()
 
 # define behaviour for the valves and tank level
 def tank_valves_thread(physical_values):
@@ -66,16 +66,5 @@ def bottle_filling_thread(physical_values):
 def print_values(physical_values):
     while True:
         print(physical_values)
-        #conn = sqlite3.connect("physical_interactions.db")
-        #cursor = conn.cursor()
-
-        #cursor.execute(f"SELECT value FROM conveyor_belt_engine_state ORDER BY timestamp DESC LIMIT 1")
-        #value = cursor.fetchone()
-        #conn.commit()
-        #print(f"SQLite conveyor_belt_engine_state : {value}")
-        #cursor.execute(f"SELECT value FROM bottle_distance_to_filler_value ORDER BY timestamp DESC LIMIT 1")
-        #value = cursor.fetchone()
-        #conn.commit()
-        #print(f"SQLite bottle_distance_to_filler_value : {value}")
 
         time.sleep(0.1)

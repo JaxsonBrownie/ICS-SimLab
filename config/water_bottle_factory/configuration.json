@@ -83,7 +83,7 @@
                     "slave_id": 1,
                     "address": 10,
                     "count": 1,
-                    "interval": 1
+                    "interval": 0.2
                 }
             ],
             "controllers":
@@ -94,8 +94,7 @@
                     "value_type": "coil",
                     "slave_id": 1,
                     "address": 20,
-                    "count": 1,
-                    "interval": 1
+                    "count": 1
                 },
                 {
                     "outbound_connection_id": "tank_output_valve_con",
@@ -103,8 +102,7 @@
                     "value_type": "coil",
                     "slave_id": 1,
                     "address": 20,
-                    "count": 1,
-                    "interval": 1
+                    "count": 1
                 }
             ]
         },
@@ -185,7 +183,7 @@
                     "slave_id": 1,
                     "address": 20,
                     "count": 1,
-                    "interval": 1
+                    "interval": 0.2
                 },
                 {
                     "outbound_connection_id": "bottle_distance_con",
@@ -194,7 +192,7 @@
                     "slave_id": 1,
                     "address": 21,
                     "count": 1,
-                    "interval": 1
+                    "interval": 0.2
                 }
             ],
             "controllers":
@@ -205,8 +203,7 @@
                     "value_type": "coil",
                     "slave_id": 1,
                     "address": 30,
-                    "count": 1,
-                    "interval": 1
+                    "count": 1
                 },
                 {
                     "outbound_connection_id": "plc1_con",
@@ -214,8 +211,7 @@
                     "value_type": "coil",
                     "slave_id": "1",
                     "address": 3,
-                    "count": 1,
-                    "interval": 1
+                    "count": 1
                 }
             ]
         }

@@ -578,7 +578,7 @@ def create_communications(json_content):
     # create hardware SQLite database
     conn = sqlite3.connect(f"{root_path}/simulation/communications/physical_interactions.db")
     cursor = conn.cursor()
-    cursor.execute("PRAGMA synchronous = NORMAL;")
+    cursor.execute("PRAGMA synchronous = OFF;")
 
     # optimise db for speed
     #cursor.execute("PRAGMA journal_mode=WAL;")
