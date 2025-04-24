@@ -20,13 +20,6 @@ app = Flask(__name__)
 # global variables (only used for endpoints)
 register_values = {}
 
-# here we import the defined logic
-# the logic will always be in a python file called logic.py, which gets copied to the container
-#try:
-#    import logic # type: ignore
-#except ModuleNotFoundError:
-#    logging.error("Could not import logic for Actuator component")
-
 
 
 # FUNCTION: start_servers
@@ -45,25 +38,6 @@ async def start_servers(configs, context):
 
 
 
-# FUNCTION: database_interaction
-# PURPOSE:  Starts a process that writes to the SQLite table specific to this actuator.
-#           The values from the dictionary "physical_values" will get written to the
-#           database to simulate the actuator affecting the physical environment.
-def database_interaction(configs, physical_values):
-    # connect to hardware SQLite database
-    conn = sqlite3.connect("physical_interactions.db")
-    cursor = conn.cursor()
-    table = configs["database"]["table"]
-
-    while True:
-        # write the actuators physical values to the SQLite database
-        for physical_value in configs["database"]["physical_values"]:
-            cursor.execute(f"INSERT INTO {table}(value) VALUES(?)", (physical_values[physical_value['name']],))
-            conn.commit()
-        time.sleep(0.1)
-
-
-
 # FUNCTION: start_actuator
 # PURPOSE:  Starts a process to write data to an SQLite column specific to this actuator.
 def start_actuator(configs, values):
@@ -79,6 +53,8 @@ def start_actuator(configs, values):
             count = co["count"]
             table = co["physical_value"]
             value = values["co"].getValues(address, count)[0]
+            #if table == "conveyor_belt_engine_state":
+                #print(f"SENSOR {table}: {value}")
 
             cursor.execute(f"INSERT INTO {table}(value) VALUES(?)", (value,))
             value = cursor.fetchone()
@@ -145,12 +121,6 @@ async def main():
     # start any configured servers with the same context
     values = {"co": co, "di": di, "hr": hr, "ir": ir}
     server_task = start_servers(configs, context)
-
-    # create a dictionary to represent the different physical values
-    #physical_values = {}
-    #for value in configs["database"]["physical_values"]:
-    #    # initialise all physical values to just be an empty string (the key matters more)
-    #    physical_values[value["name"]] = ""
     
     # create a dictionary to represent the different register values
     register_values = utils.create_register_values_dict(configs)
@@ -162,19 +132,6 @@ async def main():
     # start a thread to constantly update the "register_values" dictionary with the actual modbus register values
     sync_registers = Thread(target=utils.update_register_values, args=(register_values, values), daemon=True)
     sync_registers.start()
-
-
-
-    # start the actuator logic thread
-    # the logic will read "register_values" and write to "physical_values"
-    #actuator_thread = Thread(target=logic.logic, args=(register_values, physical_values, 0.2))
-    #actuator_thread.daemon = True
-    #actuator_thread.start()
-    
-    # this thread writes the values of physical_values to the database (so we don't need database queries in the logic)
-    #logic_thread = Thread(target=database_interaction, args=(configs, physical_values))
-    #logic_thread.daemon = True
-    #logic_thread.start()
 
     # start the flask endpoint
     flask_thread = Thread(target=flask_app, args=(app,), daemon=True)

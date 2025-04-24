@@ -1,4 +1,5 @@
 import time
+import sqlite3
 from threading import Thread
 
 # note that "physical_values" is a dictionary of all the values defined in the JSON
@@ -6,7 +7,7 @@ from threading import Thread
 def logic(physical_values, interval):
 
     # initial values
-    physical_values["tank_level_value"] = 50
+    physical_values["tank_level_value"] = 500
     physical_values["tank_input_valve_state"] = False
     physical_values["tank_output_valve_state"] = True
     physical_values["bottle_level_value"] = 0
@@ -37,34 +38,44 @@ def logic(physical_values, interval):
 def tank_valves_thread(physical_values):
     while True:
         if physical_values["tank_input_valve_state"] == True:
-            physical_values["tank_level_value"] += 3
+            physical_values["tank_level_value"] += 18
 
         if physical_values["tank_output_valve_state"] == True:
-            physical_values["tank_level_value"] -= 1
-        time.sleep(0.5)
+            print("HIL: VALUE OPEN")
+            physical_values["tank_level_value"] -= 6
+        time.sleep(0.6)
 
 # define bottle filling behaviour
 def bottle_filling_thread(physical_values):
     while True:
-        print(physical_values["bottle_distance_to_filler_value"])
-
         # fill bottle up if there's a bottle underneath the filler and the tank output is on
         if physical_values["tank_output_valve_state"] == True:
-            if physical_values["bottle_distance_to_filler_value"] >= 0 and physical_values["bottle_distance_to_filler_value"] <= 50:
-                physical_values["bottle_level_value"] += 1
+            if physical_values["bottle_distance_to_filler_value"] >= 0 and physical_values["bottle_distance_to_filler_value"] <= 25:
+                physical_values["bottle_level_value"] += 6
         
-        # move the conveyor
+        # move the conveyor (reset bottle and distance if needed)
         if physical_values["conveyor_belt_engine_state"] == True:
-            physical_values["bottle_distance_to_filler_value"] -= 1
+            physical_values["bottle_distance_to_filler_value"] -= 8
             
             if physical_values["bottle_distance_to_filler_value"] < 0:
-                physical_values["bottle_distance_to_filler_value"] = 15
+                physical_values["bottle_distance_to_filler_value"] = 170
                 physical_values["bottle_level_value"] = 0
-
-        time.sleep(0.5)
+        time.sleep(0.6)
 
 # printing thread
 def print_values(physical_values):
     while True:
         print(physical_values)
-        time.sleep(0.5)
+        #conn = sqlite3.connect("physical_interactions.db")
+        #cursor = conn.cursor()
+
+        #cursor.execute(f"SELECT value FROM conveyor_belt_engine_state ORDER BY timestamp DESC LIMIT 1")
+        #value = cursor.fetchone()
+        #conn.commit()
+        #print(f"SQLite conveyor_belt_engine_state : {value}")
+        #cursor.execute(f"SELECT value FROM bottle_distance_to_filler_value ORDER BY timestamp DESC LIMIT 1")
+        #value = cursor.fetchone()
+        #conn.commit()
+        #print(f"SQLite bottle_distance_to_filler_value : {value}")
+
+        time.sleep(0.1)

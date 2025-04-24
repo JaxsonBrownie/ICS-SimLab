@@ -26,20 +26,22 @@ def logic(input_registers, output_registers, state_update_callbacks):
             state_update_callbacks["plc1_tank_output_state"]()
             conveyor_engine_state_ref["value"] = False
             state_update_callbacks["conveyor_engine_state"]()
+            #print("PLC2: FILLING THE BOTTLE")
             state = "filling"
 
         # stop filling and start conveyor
-        if bottle_level_ref["value"] >= 18 and state == "filling":
+        if bottle_level_ref["value"] >= 180 and state == "filling":
             # turn off the tank and start conveyoer
             plc1_tank_output_state_ref["value"] = False
             state_update_callbacks["plc1_tank_output_state"]()
             conveyor_engine_state_ref["value"] = True
             state_update_callbacks["conveyor_engine_state"]()
+            #print("PLC2: BOTTLE IS FULL")
             state = "moving"
 
         # wait for conveyor to move the bottle
         if state == "moving":
-            if bottle_distance_to_filler_ref["value"] >= 0 and bottle_distance_to_filler_ref["value"] <= 5:
+            if bottle_distance_to_filler_ref["value"] >= 0 and bottle_distance_to_filler_ref["value"] <= 25:
                 # wait for a new bottle to enter
                 if bottle_level_ref["value"] == 0:
                     state = "ready"

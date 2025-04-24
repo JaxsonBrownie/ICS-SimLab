@@ -577,10 +577,14 @@ def create_communications(json_content):
 
     # create hardware SQLite database
     conn = sqlite3.connect(f"{root_path}/simulation/communications/physical_interactions.db")
-    
-    # create tables for the HIL components in the SQLite database
     cursor = conn.cursor()
-    # create a table for all hils
+
+    # optimise db for speed
+    #cursor.execute("PRAGMA journal_mode=WAL;")
+    #cursor.execute("PRAGMA synchronous=NORMAL;")
+    #conn.commit()
+
+    # create tables for the HIL components in the SQLite database
     cursor.execute("CREATE TABLE hils (name TEXT PRIMARY KEY)")
     conn.commit()
 

@@ -62,6 +62,7 @@ def run_rtu_master(connection):
 # FUNCTION: update_register_values
 # PURPOSE:  Updates the "register_values" dictionary with the register values of the modbus server,
 #           which is in the "values" dictionary.
+# TODO: improve efficency
 def update_register_values(register_values, values):
     while True:
         # create a clone dictionary to hold the "to-be-updated" values

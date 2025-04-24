@@ -47,7 +47,7 @@ def start_sensor(configs, values):
     # connect to hardware SQLite database
     conn = sqlite3.connect("physical_interactions.db")
     cursor = conn.cursor()
-
+    
     while True:
         # gets values for all value types from the physical databases
         value = ""
