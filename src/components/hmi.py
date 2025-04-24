@@ -47,6 +47,7 @@ async def init_inbound_cons(configs, context):
 def init_outbound_cons(configs):
     connections = {}
     for connection in configs["outbound_connections"]:
+        time.sleep(0.75)
         if connection["type"] == "tcp":
             client = utils.run_tcp_client(connection)
             connections[connection["id"]] = client
@@ -160,8 +161,7 @@ async def main():
     values = {"co": co, "di": di, "hr": hr, "ir": ir}
     inbound_cons = asyncio.create_task(init_inbound_cons(configs, context))
 
-    # start any outbound connections, waiting 3 seconds to ensure connections are up
-    time.sleep(3)
+    # start any outbound connections
     outbound_cons = init_outbound_cons(configs)
 
     # start any configured monitors using the started outbound connections
@@ -171,7 +171,7 @@ async def main():
     register_values = utils.create_register_values_dict(configs)
 
     # start a thread to continously update the registers dictionary
-    sync_registers = Thread(target=utils.pdate_register_values, args=(register_values, values), daemon=True)
+    sync_registers = Thread(target=utils.update_register_values, args=(register_values, values), daemon=True)
     sync_registers.start()
     
     # start the flask endpoint
