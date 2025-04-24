@@ -37,7 +37,6 @@ def output_data(configs, physical_values):
             if physical_value["io"] == "output":
                 cursor.execute(f"INSERT INTO {table}(value, hil) VALUES(?, ?)", (physical_values[physical_value['name']], hil))
                 conn.commit()
-                print((table, physical_values[physical_value['name']], hil))
         time.sleep(0.3)
 
 

@@ -53,8 +53,6 @@ def start_actuator(configs, values):
             count = co["count"]
             table = co["physical_value"]
             value = values["co"].getValues(address, count)[0]
-            #if table == "conveyor_belt_engine_state":
-                #print(f"SENSOR {table}: {value}")
 
             cursor.execute(f"INSERT INTO {table}(value) VALUES(?)", (value,))
             value = cursor.fetchone()

@@ -28,6 +28,14 @@ def logic(input_registers, output_registers, state_update_callbacks):
             state_update_callbacks["conveyor_engine_state"]()
             state = "filling"
 
+            # check if there's a bottle underneath (safeguard incase a bottle is missed)
+            if not (bottle_distance_to_filler_ref["value"] >= 0 and bottle_distance_to_filler_ref["value"] <= 30): 
+                plc1_tank_output_state_ref["value"] = False
+                state_update_callbacks["plc1_tank_output_state"]()
+                conveyor_engine_state_ref["value"] = True
+                state_update_callbacks["conveyor_engine_state"]()
+                state = "moving"
+
         # stop filling and start conveyor
         if bottle_level_ref["value"] >= 180 and state == "filling":
             # turn off the tank and start conveyoer

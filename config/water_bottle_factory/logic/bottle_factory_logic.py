@@ -41,7 +41,6 @@ def tank_valves_thread(physical_values):
             physical_values["tank_level_value"] += 18
 
         if physical_values["tank_output_valve_state"] == True:
-            print("HIL: VALUE OPEN")
             physical_values["tank_level_value"] -= 6
         time.sleep(0.6)
 

@@ -7,10 +7,10 @@
 import requests
 import json
 import time
-import asyncio
 import sqlite3
 import streamlit as st
 import pandas as pd
+import altair as alt
                   
 # FUNCTION: retrieve_configs
 # PURPOSE:  Retrieves the JSON configs
@@ -115,8 +115,8 @@ def create_register_table(response):
 
 
 # FUNCTION: main
-# PURPOSE:  The main execution
-async def main():
+# PURPOSE:  The main execution. Here we render everything to show on the web user interface.
+def main():
     time.sleep(1)
 
     # render the streamlit application
@@ -174,10 +174,11 @@ async def main():
     st.header("Hardware-in-the-Loops") 
     st.subheader("Physical Values") 
     hils = {}
+    graphs = {}
     for hil in hil_info:
-        #hils[hil["name"]] = {}
         for physical_value in hil["values"]:
-            hils[physical_value] = st.empty() 
+            hils[physical_value] = st.empty()
+            graphs[physical_value] = st.empty() 
 
     # have a single event loop for API polling (streamlit sucks for multi threaded stuff)
     while True:
@@ -248,10 +249,21 @@ async def main():
                 table = physical_value
                 df = pd.read_sql_query(f"SELECT * FROM {table} ORDER BY timestamp DESC LIMIT 1", conn)
                 hils[physical_value].dataframe(df)
+                df = pd.read_sql_query(f"SELECT timestamp, value FROM {table} ORDER BY timestamp DESC LIMIT 100", conn)
+                df["timestamp"] = pd.to_datetime(df["timestamp"])
+                df["value"] = pd.to_numeric(df["value"])
+                df_grouped = df.groupby('timestamp')[["value"]].mean()
+                
+                chart = alt.Chart(df_grouped.reset_index()).mark_line().encode(
+                    x=alt.X("timestamp:T", title="Time", axis=alt.Axis(format="%M:%S")),
+                    y=alt.Y("value:Q", title="Value")
+                )
+
+                graphs[physical_value].altair_chart(chart)
         conn.close()
 
         time.sleep(1)
 
 
 if __name__ == "__main__":
-    asyncio.run(main())
+    main()
