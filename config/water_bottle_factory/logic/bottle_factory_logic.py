@@ -50,15 +50,15 @@ def bottle_filling_thread(physical_values):
     while True:
         # fill bottle up if there's a bottle underneath the filler and the tank output is on
         if physical_values["tank_output_valve_state"] == True:
-            if physical_values["bottle_distance_to_filler_value"] >= 0 and physical_values["bottle_distance_to_filler_value"] <= 25:
+            if physical_values["bottle_distance_to_filler_value"] >= 0 and physical_values["bottle_distance_to_filler_value"] <= 30:
                 physical_values["bottle_level_value"] += 6
         
         # move the conveyor (reset bottle and distance if needed)
         if physical_values["conveyor_belt_engine_state"] == True:
-            physical_values["bottle_distance_to_filler_value"] -= 8
+            physical_values["bottle_distance_to_filler_value"] -= 4
             
             if physical_values["bottle_distance_to_filler_value"] < 0:
-                physical_values["bottle_distance_to_filler_value"] = 170
+                physical_values["bottle_distance_to_filler_value"] = 130
                 physical_values["bottle_level_value"] = 0
         time.sleep(0.6)
 

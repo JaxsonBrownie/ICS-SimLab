@@ -41,7 +41,7 @@ def logic(input_registers, output_registers, state_update_callbacks):
 
         # wait for conveyor to move the bottle
         if state == "moving":
-            if bottle_distance_to_filler_ref["value"] >= 0 and bottle_distance_to_filler_ref["value"] <= 25:
+            if bottle_distance_to_filler_ref["value"] >= 0 and bottle_distance_to_filler_ref["value"] <= 30:
                 # wait for a new bottle to enter
                 if bottle_level_ref["value"] == 0:
                     state = "ready"
