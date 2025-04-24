@@ -143,7 +143,7 @@ def start_monitors(configs, outbound_cons, values):
 #           called when a value needs to be written
 def make_writing_callback(configs, controller_config, output_reg_values, modbus_con, values):
     def write_value():
-        logging.info("Callback made")
+        #logging.info("Callback made")
         outbound_con_id = controller_config["outbound_connection_id"]
 
         if controller_config["value_type"] == "coil":

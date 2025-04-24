@@ -95,7 +95,7 @@ def update_register_values(register_values, values):
         register_values["holding_register"] = updated_register_values["holding_register"].copy()
         register_values["input_register"] = updated_register_values["input_register"].copy()
 
-        time.sleep(0.2)
+        time.sleep(0.1)
 
 
 

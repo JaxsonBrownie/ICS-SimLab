@@ -22,48 +22,41 @@ except ModuleNotFoundError:
 
 
 
-# FUNCTION: database_interaction
+# FUNCTION: output_data
 # PURPOSE:  Handles writing the physical values into the SQLite database. Only used with output
 #           interactions.
-def database_interaction(configs, physical_values):
+def output_data(configs, physical_values):
     # connect to hardware SQLite database
     conn = sqlite3.connect("physical_interactions.db")
     cursor = conn.cursor()
-    table = configs["database"]["table"]
+    hil = configs["database"]["table"]
 
     while True:
         for physical_value in configs["database"]["physical_values"]:
+            table = physical_value["name"]
             if physical_value["io"] == "output":
-                cursor.execute(f"""
-                    UPDATE {table}
-                    SET value = ?
-                    WHERE physical_value = ?
-                """, (physical_values[physical_value['name']], physical_value['name']))
+                cursor.execute(f"INSERT INTO {table}(value, hil) VALUES(?, ?)", (physical_values[physical_value['name']], hil))
                 conn.commit()
         time.sleep(0.1)
 
 
 
-# FUNCTION: monitor_physical_inputs
+# FUNCTION: input_data
 # PURPOSE:  Monitors physical database interactions for input interactions.
-def monitor_physical_inputs(configs, physical_values):
+def input_data(configs, physical_values):
     # connect to hardware SQLite database
     conn = sqlite3.connect("physical_interactions.db")
     cursor = conn.cursor()
-    table = configs["database"]["table"]
 
     while True:
         for physical_value in configs["database"]["physical_values"]:
+            table = physical_value["name"]
             if physical_value["io"] == "input":
-                cursor.execute(f"""
-                    SELECT value
-                    FROM {table}
-                    WHERE physical_value = ?
-                """, (physical_value['name'],))
+                cursor.execute(f"SELECT value FROM {table} ORDER BY timestamp DESC LIMIT 1")
                 value = cursor.fetchone()
                 conn.commit()
 
-                if value and value[0] != "":
+                if value and value[0] not in (None, ""):
                     physical_values[physical_value['name']] = int(float(value[0]))
         time.sleep(0.1)
 
@@ -87,12 +80,12 @@ async def main():
     logic_thread.start()
 
     # begin the database output writing thread
-    db_in_thread = Thread(target=database_interaction, args=(configs, physical_values))
+    db_in_thread = Thread(target=output_data, args=(configs, physical_values))
     db_in_thread.daemon = True
     db_in_thread.start()
 
     # begin database input reading thread
-    db_out_thread = Thread(target=monitor_physical_inputs, args=(configs, physical_values))
+    db_out_thread = Thread(target=input_data, args=(configs, physical_values))
     db_out_thread.daemon = True
     db_out_thread.start()
 

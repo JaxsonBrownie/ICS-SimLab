@@ -23,14 +23,14 @@ def logic(input_registers, output_registers, state_update_callbacks):
     while True:
         # turn input on if the tank is almost empty
         if tank_level_ref["value"] < 40 and state_change:
-            print("Water level below 40")
+            #print("Water level below 40")
             tank_input_valve_ref["value"] = True
             state_update_callbacks["tank_input_valve_state"]()
             state_change = False
 
         # turn input off if tank gets full
         elif tank_level_ref["value"] > 70 and not state_change:
-            print("Water level above 70")
+            #print("Water level above 70")
             tank_input_valve_ref["value"] = False
             state_update_callbacks["tank_input_valve_state"]()
             state_change = True
@@ -40,5 +40,5 @@ def logic(input_registers, output_registers, state_update_callbacks):
             state_update_callbacks["tank_output_valve_state"]()
             prev_tank_output_valve = tank_output_valve_ref["value"]
 
-        time.sleep(0.2)
+        time.sleep(0.1)
 

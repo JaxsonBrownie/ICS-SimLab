@@ -10,7 +10,6 @@ import time
 import utils
 from flask import Flask, jsonify
 from threading import Thread
-from pymodbus.server import ModbusTcpServer, ModbusSerialServer
 from pymodbus.datastore import ModbusSequentialDataBlock, ModbusSlaveContext, ModbusServerContext
 
 logging.basicConfig(level=logging.INFO, format='%(levelname)s - %(message)s')
@@ -48,49 +47,48 @@ def start_sensor(configs, values):
     # connect to hardware SQLite database
     conn = sqlite3.connect("physical_interactions.db")
     cursor = conn.cursor()
-    table = configs["database"]["table"]
 
     while True:
         # gets values for all value types from the physical databases
         value = ""
         for co in configs["values"]["coil"]:
             address = co["address"]
-
-            cursor.execute(f"SELECT value FROM {table} WHERE physical_value = ?", (co['physical_value'],))
+            table = co["physical_value"]
+            cursor.execute(f"SELECT value FROM {table} ORDER BY timestamp DESC LIMIT 1")
             value = cursor.fetchone()
             conn.commit()
 
-            if value and value[0] != "":
+            if value and value[0] not in (None, ""):
                 values["co"].setValues(address, int(float(value[0])))
         for di in configs["values"]["discrete_input"]:
             address = di["address"]
-
-            cursor.execute(f"SELECT value FROM {table} WHERE physical_value = ?", (di['physical_value'],))
+            table = di["physical_value"]
+            cursor.execute(f"SELECT value FROM {table} ORDER BY timestamp DESC LIMIT 1")
             value = cursor.fetchone()
             conn.commit()
 
-            if value and value[0] != "":
+            if value and value[0] not in (None, ""):
                 values["di"].setValues(address, int(float(value[0])))
         for hr in configs["values"]["holding_register"]:
             address = hr["address"]
-
-            cursor.execute(f"SELECT value FROM {table} WHERE physical_value = ?", (hr['physical_value'],))
+            table = hr["physical_value"]
+            cursor.execute(f"SELECT value FROM {table} ORDER BY timestamp DESC LIMIT 1")
             value = cursor.fetchone()
             conn.commit()
 
-            if value and value[0] != "":
+            if value and value[0] not in (None, ""):
                 values["hr"].setValues(address, int(float(value[0])))
         for ir in configs["values"]["input_register"]:
             address = ir["address"]
-
-            cursor.execute(f"SELECT value FROM {table} WHERE physical_value = ?", (ir['physical_value'],))
+            table = ir["physical_value"]
+            cursor.execute(f"SELECT value FROM {table} ORDER BY timestamp DESC LIMIT 1")
             value = cursor.fetchone()
             conn.commit()
 
-            if value and value[0] != "":
+            if value and value[0] not in (None, ""):
                 values["ir"].setValues(address, int(float(value[0])))
 
-        time.sleep(0.2)
+        time.sleep(0.1)
 
 
 
@@ -140,8 +138,9 @@ async def main():
     flask_thread = Thread(target=flask_app, args=(app,), daemon=True)
     flask_thread.start()
 
-    # await tasks
+    # await tasks and threads
     await server_task
+    sensor_thread.join()
     sync_registers.join()
     flask_thread.join()
 

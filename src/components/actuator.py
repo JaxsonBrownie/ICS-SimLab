@@ -10,7 +10,6 @@ import sqlite3
 import utils
 from flask import Flask, jsonify
 from threading import Thread
-from pymodbus.server import ModbusTcpServer, ModbusSerialServer
 from pymodbus.datastore import ModbusSequentialDataBlock, ModbusSlaveContext, ModbusServerContext
 
 logging.basicConfig(level=logging.INFO, format='%(levelname)s - %(message)s')
@@ -23,10 +22,10 @@ register_values = {}
 
 # here we import the defined logic
 # the logic will always be in a python file called logic.py, which gets copied to the container
-try:
-    import logic # type: ignore
-except ModuleNotFoundError:
-    logging.error("Could not import logic for Actuator component")
+#try:
+#    import logic # type: ignore
+#except ModuleNotFoundError:
+#    logging.error("Could not import logic for Actuator component")
 
 
 
@@ -46,45 +45,6 @@ async def start_servers(configs, context):
 
 
 
-# FUNCTION: update_register_values
-# PURPOSE:  Updates the "register_values" dictionary with the register values of the modbus server,
-#           which is in the "values" dictionary.
-def update_register_values(register_values, values):
-    while True:
-        # create a clone dictionary to hold the "to-be-updated" values
-        updated_register_values = register_values.copy()
-
-        # update the cloned copy with the real modbus values
-        index = 0
-        for co in register_values["coil"]:
-            modbus_value = values["co"].getValues(co["address"], co["count"])[0]
-            updated_register_values["coil"][index]["value"] = modbus_value
-            index += 1
-        index = 0
-        for di in register_values["discrete_input"]:
-            modbus_value = values["di"].getValues(di["address"], di["count"])[0]
-            updated_register_values["discrete_input"][index]["value"] = modbus_value
-            index += 1
-        index = 0
-        for hr in register_values["holding_register"]:
-            modbus_value = values["hr"].getValues(hr["address"], hr["count"])[0]
-            updated_register_values["holding_register"][index]["value"] = modbus_value
-            index += 1
-        index = 0
-        for ir in register_values["input_register"]:
-            modbus_value = values["ir"].getValues(ir["address"], ir["count"])[0]
-            updated_register_values["input_register"][index]["value"] = modbus_value
-            index += 1
-        
-        # update register values from the cloned copy
-        register_values["coil"] = updated_register_values["coil"].copy()
-        register_values["discrete_input"] = updated_register_values["discrete_input"].copy()
-        register_values["holding_register"] = updated_register_values["holding_register"].copy()
-        register_values["input_register"] = updated_register_values["input_register"].copy()
-
-        time.sleep(0.2)
-
-
 # FUNCTION: database_interaction
 # PURPOSE:  Starts a process that writes to the SQLite table specific to this actuator.
 #           The values from the dictionary "physical_values" will get written to the
@@ -98,14 +58,60 @@ def database_interaction(configs, physical_values):
     while True:
         # write the actuators physical values to the SQLite database
         for physical_value in configs["database"]["physical_values"]:
-            cursor.execute(f"""
-                UPDATE {table}
-                SET value = ?
-                WHERE physical_value = ?
-            """, (physical_values[physical_value['name']], physical_value['name']))
+            cursor.execute(f"INSERT INTO {table}(value) VALUES(?)", (physical_values[physical_value['name']],))
             conn.commit()
         time.sleep(0.1)
 
+
+
+# FUNCTION: start_actuator
+# PURPOSE:  Starts a process to write data to an SQLite column specific to this actuator.
+def start_actuator(configs, values):
+    # connect to hardware SQLite database
+    conn = sqlite3.connect("physical_interactions.db")
+    cursor = conn.cursor()
+
+    while True:
+        # gets values for all value types from the physical databases
+        value = ""
+        for co in configs["values"]["coil"]:
+            address = co["address"]
+            count = co["count"]
+            table = co["physical_value"]
+            value = values["co"].getValues(address, count)[0]
+
+            cursor.execute(f"INSERT INTO {table}(value) VALUES(?)", (value,))
+            value = cursor.fetchone()
+            conn.commit()
+        for di in configs["values"]["discrete_input"]:
+            address = di["address"]
+            count = di["count"]
+            table = di["physical_value"]
+            value = values["di"].getValues(address, count)[0]
+
+            cursor.execute(f"INSERT INTO {table}(value) VALUES(?)", (value,))
+            value = cursor.fetchone()
+            conn.commit()
+        for hr in configs["values"]["holding_register"]:
+            address = hr["address"]
+            count = hr["count"]
+            table = hr["physical_value"]
+            value = values["hr"].getValues(address, count)[0]
+
+            cursor.execute(f"INSERT INTO {table}(value) VALUES(?)", (value,))
+            value = cursor.fetchone()
+            conn.commit()
+        for ir in configs["values"]["input_register"]:
+            address = ir["address"]
+            count = ir["count"]
+            table = ir["physical_value"]
+            value = values["ir"].getValues(address, count)[0]
+
+            cursor.execute(f"INSERT INTO {table}(value) VALUES(?)", (value,))
+            value = cursor.fetchone()
+            conn.commit()
+
+        time.sleep(0.1)
 
 
 
@@ -141,43 +147,44 @@ async def main():
     server_task = start_servers(configs, context)
 
     # create a dictionary to represent the different physical values
-    physical_values = {}
-    for value in configs["database"]["physical_values"]:
-        # initialise all physical values to just be an empty string (the key matters more)
-        physical_values[value["name"]] = ""
+    #physical_values = {}
+    #for value in configs["database"]["physical_values"]:
+    #    # initialise all physical values to just be an empty string (the key matters more)
+    #    physical_values[value["name"]] = ""
     
     # create a dictionary to represent the different register values
-    # we do this as we want to abstract the actual modbus registers
-    # a sample of register_values could look like:
     register_values = utils.create_register_values_dict(configs)
 
-    # start a thread to constantly update the "register_values" dictionary with the actual modbus register values
-    sync_register_values = Thread(target=update_register_values, args=(register_values, values))
-    sync_register_values.daemon = True
-    sync_register_values.start()
+    # start the actuator writing thread
+    actuator_thread = Thread(target=start_actuator, args=(configs, values), daemon=True)
+    actuator_thread.start()
 
-    # TODO: investigate if the actuator even needs logic
+    # start a thread to constantly update the "register_values" dictionary with the actual modbus register values
+    sync_registers = Thread(target=utils.update_register_values, args=(register_values, values), daemon=True)
+    sync_registers.start()
+
+
+
     # start the actuator logic thread
     # the logic will read "register_values" and write to "physical_values"
-    actuator_thread = Thread(target=logic.logic, args=(register_values, physical_values, 0.2))
-    actuator_thread.daemon = True
-    actuator_thread.start()
+    #actuator_thread = Thread(target=logic.logic, args=(register_values, physical_values, 0.2))
+    #actuator_thread.daemon = True
+    #actuator_thread.start()
     
     # this thread writes the values of physical_values to the database (so we don't need database queries in the logic)
-    logic_thread = Thread(target=database_interaction, args=(configs, physical_values))
-    logic_thread.daemon = True
-    logic_thread.start()
+    #logic_thread = Thread(target=database_interaction, args=(configs, physical_values))
+    #logic_thread.daemon = True
+    #logic_thread.start()
 
     # start the flask endpoint
-    flask_thread = Thread(target=flask_app, args=(app,))
-    flask_thread.daemon = True
+    flask_thread = Thread(target=flask_app, args=(app,), daemon=True)
     flask_thread.start()
 
     # await tasks and threads
     await server_task
-    sync_register_values.join()
     actuator_thread.join()
-    logic_thread.join()
+    sync_registers.join()
+    #logic_thread.join()
     flask_thread.join()
 
 

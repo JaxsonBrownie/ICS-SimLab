@@ -9,8 +9,10 @@ import ipaddress
 import shutil
 import sqlite3
 import subprocess
+import logging
 from pathlib import Path
 
+logging.basicConfig(level=logging.INFO, format='%(levelname)s - %(message)s')
 
 # FUNCTION: parse_json_to_yaml
 # PURPOSE: Opens and validates the JSON file and parses it into a
@@ -27,7 +29,7 @@ def parse_json_to_yaml(directory, yaml_filename):
         try:
             json_content = json.loads(content)
         except ValueError as e:
-            print(f"Invalid JSON: {e}")
+            logging.error(f"Invalid JSON: {e}")
 
         # create all sections for the YAML file
         networks = build_network_yaml(json_content)
@@ -511,9 +513,7 @@ def build_actuator_directory(json_content, directory):
         with open(f"{root_path}/simulation/containers/{actuator['name']}/src/config.json", "w") as conf_file:
             conf_file.write(json.dumps(json_config, indent=4))
 
-        # copy actuator code and logic
-        logic_file = actuator["logic"]
-        shutil.copy(f"{directory}logic/{logic_file}", f"{root_path}/simulation/containers/{actuator['name']}/src/logic.py")
+        # copy actuator code
         shutil.copy(f"{root_path}/src/components/actuator.py", f"{root_path}/simulation/containers/{actuator['name']}/src")
         shutil.copy(f"{root_path}/src/components/utils.py", f"{root_path}/simulation/containers/{actuator['name']}/src")
 
@@ -580,23 +580,24 @@ def create_communications(json_content):
     
     # create tables for the HIL components in the SQLite database
     cursor = conn.cursor()
-    for hil in json_content["hils"]:
-        cursor.execute(
-            f"""CREATE TABLE {hil['name']} (
-                physical_value TEXT PRIMARY KEY,
-                value TEXT,
-                timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
-            )"""
-            )
-        conn.commit()
+    # create a table for all hils
+    cursor.execute("CREATE TABLE hils (name TEXT PRIMARY KEY)")
+    conn.commit()
 
-        # create default values for all the physical values (just the empty string)
+    for hil in json_content["hils"]:
         for physical_value in hil["physical_values"]:
+            cursor.execute(f"INSERT INTO hils(name) VALUES (\"{physical_value['name']}\")")
+            conn.commit()
             cursor.execute(
-                f"""INSERT INTO {hil['name']} (physical_value, value)
-                    VALUES (?, ?)
-                """, (physical_value['name'], "")
-            )
+                f"""CREATE TABLE {physical_value['name']} (
+                    value TEXT,
+                    timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
+                    hil TEXT,
+                    FOREIGN KEY(hil) REFERENCES hils(name)
+                )"""
+                )
+            conn.commit()
+            cursor.execute(f"INSERT INTO {physical_value['name']}(hil) VALUES (\"{hil['name']}\")")
             conn.commit()
     conn.close()
 

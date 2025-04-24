@@ -58,8 +58,12 @@ def get_component_info(configs):
             })
     if "hils" in configs:
         for hil in configs["hils"]:
+            physical_values = []
+            for physical_value in hil["physical_values"]:
+                physical_values.append(physical_value["name"])
             hil_info.append({
-                "name": hil["name"]
+                "name": hil["name"],
+                "values": physical_values
             })
 
     return hmi_info, plc_info, sensor_info, actuator_info, hil_info
@@ -171,7 +175,9 @@ async def main():
     st.subheader("Physical Values") 
     hils = {}
     for hil in hil_info:
-        hils[hil["name"]] = st.empty() 
+        #hils[hil["name"]] = {}
+        for physical_value in hil["values"]:
+            hils[physical_value] = st.empty() 
 
     # have a single event loop for API polling (streamlit sucks for multi threaded stuff)
     while True:
@@ -236,13 +242,13 @@ async def main():
             )
 
         # poll the physical hil (through the SQLite3 database)
+        conn = sqlite3.connect("physical_interactions.db")
         for hil in hil_info:
-            conn = sqlite3.connect("physical_interactions.db")
-            df = pd.read_sql_query(f"SELECT * FROM {hil['name']}", conn)
-            conn.close()
-            hils[hil["name"]].dataframe(df)
-
-        
+            for physical_value in hil["values"]:
+                table = physical_value
+                df = pd.read_sql_query(f"SELECT * FROM {table} ORDER BY timestamp DESC LIMIT 1", conn)
+                hils[physical_value].dataframe(df)
+        conn.close()
 
         time.sleep(1)
 
