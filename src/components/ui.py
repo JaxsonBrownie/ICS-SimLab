@@ -175,10 +175,23 @@ def main():
     st.subheader("Physical Values") 
     hils = {}
     graphs = {}
+
+    col1, col2 = st.columns(2, border=True)
+    column_switcher = "col1"
+
     for hil in hil_info:
         for physical_value in hil["values"]:
-            hils[physical_value] = st.empty()
-            graphs[physical_value] = st.empty() 
+
+            if column_switcher == "col1":
+                hils[physical_value] = col1.empty()
+                graphs[physical_value] = col1.empty() 
+                col1.divider()
+                column_switcher = "col2"
+            elif column_switcher == "col2":
+                hils[physical_value] = col2.empty()
+                graphs[physical_value] = col2.empty()
+                col2.divider()
+                column_switcher = "col1"
 
     # have a single event loop for API polling (streamlit sucks for multi threaded stuff)
     while True:
@@ -247,8 +260,11 @@ def main():
         for hil in hil_info:
             for physical_value in hil["values"]:
                 table = physical_value
-                df = pd.read_sql_query(f"SELECT * FROM {table} ORDER BY timestamp DESC LIMIT 1", conn)
-                hils[physical_value].dataframe(df)
+                df = pd.read_sql_query(f"SELECT value FROM {table} ORDER BY timestamp DESC LIMIT 1", conn)
+                df["physical_value"] = table
+                hils[physical_value].dataframe(df, column_order=["physical_value", "value"])
+
+
                 df = pd.read_sql_query(f"SELECT timestamp, value FROM {table} ORDER BY timestamp DESC LIMIT 100", conn)
                 df["timestamp"] = pd.to_datetime(df["timestamp"])
                 df["value"] = pd.to_numeric(df["value"])

@@ -71,7 +71,7 @@ def init_outbound_cons(configs):
 # FUNCTION: monitor
 # PURPOSE:  A monitor thread to continuously read data from a defined and intialised connection
 def monitor(value_config, monitor_configs, modbus_con, values):
-    logging.info(f"Starting Monitor: {monitor_configs['id']}")
+    logging.debug(f"Starting Monitor: {monitor_configs['id']}")
     interval = monitor_configs["interval"]
     value_type = monitor_configs["value_type"]
     out_address = monitor_configs["address"]
@@ -143,7 +143,6 @@ def start_monitors(configs, outbound_cons, values):
 #           called when a value needs to be written
 def make_writing_callback(configs, controller_config, output_reg_values, modbus_con, values):
     def write_value():
-        #logging.info("Callback made")
         outbound_con_id = controller_config["outbound_connection_id"]
 
         if controller_config["value_type"] == "coil":
@@ -159,7 +158,7 @@ def make_writing_callback(configs, controller_config, output_reg_values, modbus_
                     modbus_con.write_coil(address=controller_config["address"]-1,
                                             #slave=controller_config["slave_id"], #TODO
                                             value=output_reg["value"])
-                    logging.info(f"Writing to controller {outbound_con_id}, to address {controller_config['address']} value {output_reg['value']}")
+                    logging.debug(f"Writing to controller {outbound_con_id}, to address {controller_config['address']} value {output_reg['value']}")
                     # write to the PLCs memory as well 
                     values["co"].setValues(plc_coil["address"], output_reg["value"])
 
@@ -176,7 +175,7 @@ def make_writing_callback(configs, controller_config, output_reg_values, modbus_
                         modbus_con.write_register(address=controller_config["address"]-1,
                                                 #slave=controller_config["slave_id"],
                                                 value=output_reg["value"])
-                        logging.info(f"Writing to controller {outbound_con_id}, to address {controller_config['address']} value {output_reg['value']}")
+                        logging.debug(f"Writing to controller {outbound_con_id}, to address {controller_config['address']} value {output_reg['value']}")
                         # write to the PLCs memory as well 
                         values["hr"].setValues(plc_hr["address"], output_reg["value"])
         else:
