@@ -11,3 +11,5 @@ In it's current state, it is able to simulate Industrial Control Systems of low 
 - Refer to [init.md](docs/init.md) to start a preconfigured simulation.
 - Refer to [architecture.md](https://googe.com) to understand the architecture of the simulation.
 - Refer to [configure.md](docs/configure.md) to learn to configure a custom SCADA simulation.
+
+test
