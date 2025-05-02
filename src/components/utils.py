@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
-# FILE: utils.py
-# PURPOSE: Common functions to be used in all components
+# FILE:     utils.py
+# PURPOSE:  Common functions to be used in all components
 
 import json
 import time
