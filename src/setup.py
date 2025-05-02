@@ -553,7 +553,8 @@ def create_containers(json_content, directory):
     root_path = Path(__file__).resolve().parent.parent
 
     # delete all existing container directories
-    shutil.rmtree(f"{root_path}/simulation/containers", ignore_errors=True)
+    shutil.rmtree(f"{root_path}/simulation", ignore_errors=True)
+    Path(f"{root_path}/simulation").mkdir()
     Path(f"{root_path}/simulation/containers").mkdir()
 
     # create directories for all component containers
