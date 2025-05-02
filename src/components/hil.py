@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
-# FILE: hil.py
-# PURPOSE: Simulates the physical layer. Data is written to the SQLite database to represent physical data collection
+# FILE:     hil.py
+# PURPOSE:  Simulates the physical layer. Data is written to the SQLite database to represent physical data collection
 
 import asyncio
 import sqlite3
