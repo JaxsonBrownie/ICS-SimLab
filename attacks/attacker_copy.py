@@ -11,6 +11,8 @@ import numpy as np
 from time import sleep
 from threading import Thread
 from pymodbus.client import ModbusTcpClient, ModbusSerialClient
+#from pyModbusTCP.client import ModbusClient
+#from scipy.stats import norm
 
 # constants
 LOGO = r"""

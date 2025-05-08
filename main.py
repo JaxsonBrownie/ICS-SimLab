@@ -25,8 +25,8 @@ if __name__ == "__main__":
     setup.build(args.directory)
 
     # build images
-    print("BUILDING IMAGES")
-    dc_build = subprocess.Popen(["docker", "compose", "-f", f"{root_path}/docker-compose.yaml", "build"])
+    #print("BUILDING IMAGES")
+    #dc_build = subprocess.Popen(["docker", "compose", "-f", f"{root_path}/docker-compose.yaml", "build"])
 
-    dc_build.wait()
-    print("DONE! Now run \"docker compose up\" in your terminal.")
+    #dc_build.wait()
+    #print("DONE! Now run \"docker compose up\" in your terminal.")

@@ -1,28 +1,20 @@
-# TODO: make bash script that does everything
+#!/bin/bash
 
-printStep(){
-    echo ""
-    echo "[" $1 "STARTED]"
-    sleep 1 
-}
+if [ -z "$1" ]; then
+    echo "Usage: $0 <config_directory>"
+    exit 1
+fi
 
-printStep "DEPLOYMENT"
+echo "ICS-SimLab STARTED"
 
-printStep "DOWN PREVIOUS CONTAINERS"
-sudo docker-compose down 
+echo "ACTIVATING ENVIRONMENT"
+source .venv/bin/activate
 
-printStep "PRUNING DOCKER"
-sudo docker system prune -f
+echo "BUILDING SIMULATION FILES"
+python3 main.py $1
 
-printStep 'DOCKER_COMPOSE BUILD'
-sudo docker-compose build
+echo "DOCKER_COMPOSE BUILD"
+docker compose build
 
-printStep "REMOVE TEMP SRC FILE"
-sudo rm -r ./ics-docker/src/ 
-sudo rm -r ./attacker-docker/src/ 
-
-printStep 'DOCKER_COMPOSE UP'
-sudo docker-compose up
-
-
-
+echo "DOCKER_COMPOSE UP"
+docker compose up
