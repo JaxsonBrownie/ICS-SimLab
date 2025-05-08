@@ -103,7 +103,7 @@ def build_ui_yaml(json_content):
         "build": build,
         "container_name": "ui",
         "privileged": privileged,
-        "ports": [port, 1111],
+        "ports": [f"{port}:{port}", 1111],
         "volumes": volumes,
         "command": ["streamlit", "run", "ui.py", f"--server.port={port}", "--server.address=0.0.0.0"],
     }
