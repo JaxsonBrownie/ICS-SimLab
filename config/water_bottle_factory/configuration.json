@@ -34,7 +34,7 @@
                     "id": "plc2_con"
                 }
             ],
-            "values":
+            "registers":
             {
                 "coil":
                 [
@@ -172,7 +172,7 @@
                     "id": "tank_output_valve_con"
                 }
             ],
-            "values":
+            "registers":
             {
                 "coil":
                 [
@@ -272,7 +272,7 @@
                     "id": "plc1_con"
                 }
             ],
-            "values":
+            "registers":
             {
                 "coil":
                 [
@@ -368,7 +368,7 @@
                     "comm_port": "ttyS2"
                 }
             ],
-            "values":
+            "registers":
             {
                 "coil":[],
                 "discrete_input": [],
@@ -399,7 +399,7 @@
                     "comm_port": "ttyS8"
                 }
             ],
-            "values":
+            "registers":
             {
                 "coil": [],
                 "discrete_input": [],
@@ -430,7 +430,7 @@
                     "comm_port": "ttyS10"
                 }
             ],
-            "values":
+            "registers":
             {
                 "coil": [],
                 "discrete_input": [],
@@ -466,7 +466,7 @@
                     "comm_port": "ttyS4"
                 }
             ],
-            "values":
+            "registers":
             {
                 "coil":
                 [
@@ -504,7 +504,7 @@
                     "comm_port": "ttyS6"
                 }
             ],
-            "values":
+            "registers":
             {
                 "coil":
                 [
@@ -542,7 +542,7 @@
                     "comm_port": "ttyS12"
                 }
             ],
-            "values":
+            "registers":
             {
                 "coil":
                 [

@@ -112,19 +112,19 @@ def start_monitors(configs, outbound_cons, values):
         # get the address of the internal register to write to
         value_config = {}
         if monitor_config["value_type"] == "coil":
-            for co in configs["values"]["coil"]:
+            for co in configs["registers"]["coil"]:
                 if co["id"] == monitor_config["id"]:
                     value_config = co
         elif monitor_config["value_type"] == "discrete_input":
-            for di in configs["values"]["discrete_input"]:
+            for di in configs["registers"]["discrete_input"]:
                 if di["id"] == monitor_config["id"]:
                     value_config = di
         elif monitor_config["value_type"] == "holding_register":
-            for hr in configs["values"]["holding_register"]:
+            for hr in configs["registers"]["holding_register"]:
                 if hr["id"] == monitor_config["id"]:
                     value_config = hr
         elif monitor_config["value_type"] == "input_register":
-            for ir in configs["values"]["input_register"]:
+            for ir in configs["registers"]["input_register"]:
                 if ir["id"] == monitor_config["id"]:
                     value_config = ir
 
@@ -146,38 +146,39 @@ def make_writing_callback(configs, controller_config, output_reg_values, modbus_
         outbound_con_id = controller_config["outbound_connection_id"]
 
         if controller_config["value_type"] == "coil":
-            # get the PLC value to write to
-            for coil in configs["values"]["coil"]:
+            # find the output register to write from
+            output_reg = output_reg_values[controller_config["id"]]
+
+            # write to the modbus object
+            modbus_con.write_coil(address=controller_config["address"]-1,
+                                    #slave=controller_config["slave_id"], #TODO
+                                    value=output_reg["value"])
+            logging.debug(f"Writing to controller {outbound_con_id}, to address {controller_config['address']} value {output_reg['value']}")
+            
+            # write to the PLCs memory as well
+            for coil in configs["registers"]["coil"]:
                 if coil["id"] == controller_config["id"]:
                     plc_coil = coil
-
-            # find the output register to write from
-            for output_reg in output_reg_values["coil"]:
-                if output_reg["id"] == controller_config["id"]:
-                    # write to the modbus object
-                    modbus_con.write_coil(address=controller_config["address"]-1,
-                                            #slave=controller_config["slave_id"], #TODO
-                                            value=output_reg["value"])
-                    logging.debug(f"Writing to controller {outbound_con_id}, to address {controller_config['address']} value {output_reg['value']}")
-                    # write to the PLCs memory as well 
-                    values["co"].setValues(plc_coil["address"], output_reg["value"])
+            values["co"].setValues(plc_coil["address"], output_reg["value"])
 
         elif controller_config["value_type"] == "holding_register":
+            
+            # find the output register to write from
+            output_reg = output_reg_values[controller_config["id"]]
+
+            # write to the modbus object
+            modbus_con.write_register(address=controller_config["address"]-1,
+                                    #slave=controller_config["slave_id"],
+                                    value=output_reg["value"])
+            logging.debug(f"Writing to controller {outbound_con_id}, to address {controller_config['address']} value {output_reg['value']}")
+                        
             # get the PLC value to write to
-            for hr in configs["values"]["holding_register"]:
+            for hr in configs["registers"]["holding_register"]:
                 if hr["id"] == controller_config["id"]:
                     plc_hr = hr 
 
-                # find the output register to write from
-                for output_reg in output_reg_values["holding_register"]:
-                    if output_reg["id"] == controller_config["id"]:
-                        # write to the modbus object
-                        modbus_con.write_register(address=controller_config["address"]-1,
-                                                #slave=controller_config["slave_id"],
-                                                value=output_reg["value"])
-                        logging.debug(f"Writing to controller {outbound_con_id}, to address {controller_config['address']} value {output_reg['value']}")
-                        # write to the PLCs memory as well 
-                        values["hr"].setValues(plc_hr["address"], output_reg["value"])
+            # write to the PLCs memory as well 
+            values["hr"].setValues(plc_hr["address"], output_reg["value"])
         else:
             raise Exception("Trying to write to non-writable register")
     return write_value
@@ -208,17 +209,15 @@ def get_controller_callbacks(configs, outbound_cons, output_reg_values, values):
 #           dictionaries
 def separate_io_registers(register_values):
     input_registers = {}
-    input_registers["coil"] = []
-    input_registers["discrete_input"] = []
-    input_registers["holding_register"] = []
-    input_registers["input_register"] = []
-
     output_registers = {}
-    output_registers["coil"] = []
-    output_registers["discrete_input"] = []
-    output_registers["holding_register"] = []
-    output_registers["input_register"] = []
     
+    for id, register in register_values.items():
+        if register["io"] == "input":
+            input_registers[id] = register
+        elif register["io"] == "output":
+            output_registers[id] = register
+
+    '''
     for co in register_values["coil"]:
         if co["io"] == "input":
             input_registers["coil"].append(co)
@@ -239,6 +238,7 @@ def separate_io_registers(register_values):
             input_registers["input_register"].append(ir)
         elif ir["io"] == "output":
             output_registers["input_register"].append(ir)
+    '''
     
     return input_registers, output_registers
 

@@ -4,10 +4,10 @@ def logic(input_registers, output_registers, state_update_callbacks):
     state = "ready"
 
     # get value references
-    bottle_level_ref = next((i for i in input_registers["input_register"] if i["address"] == 1), None)
-    bottle_distance_to_filler_ref = next((i for i in input_registers["input_register"] if i["address"] == 2), None)
-    conveyor_engine_state_ref = next((i for i in output_registers["coil"] if i["address"] == 3), None)
-    plc1_tank_output_state_ref = next((i for i in output_registers["coil"] if i["address"] == 11), None)
+    bottle_level_ref = input_registers["bottle_level"]
+    bottle_distance_to_filler_ref = input_registers["bottle_distance_to_filler"]
+    conveyor_engine_state_ref = output_registers["conveyor_engine_state"]
+    plc1_tank_output_state_ref = output_registers["plc1_tank_output_state"]
 
     # initial writing
     conveyor_engine_state_ref["value"] = False
@@ -28,13 +28,13 @@ def logic(input_registers, output_registers, state_update_callbacks):
             state_update_callbacks["conveyor_engine_state"]()
             state = "filling"
 
-            # check if there's a bottle underneath (safeguard incase a bottle is missed)
-            if bottle_distance_to_filler_ref["value"] > 30: 
-                plc1_tank_output_state_ref["value"] = False
-                state_update_callbacks["plc1_tank_output_state"]()
-                conveyor_engine_state_ref["value"] = True
-                state_update_callbacks["conveyor_engine_state"]()
-                state = "moving"
+        # check if there's a bottle underneath (safeguard incase a bottle is missed)
+        if bottle_distance_to_filler_ref["value"] > 30 and state == "filling": 
+            plc1_tank_output_state_ref["value"] = False
+            state_update_callbacks["plc1_tank_output_state"]()
+            conveyor_engine_state_ref["value"] = True
+            state_update_callbacks["conveyor_engine_state"]()
+            state = "moving"
 
         # stop filling and start conveyor
         if bottle_level_ref["value"] >= 180 and state == "filling":

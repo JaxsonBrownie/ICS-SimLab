@@ -103,19 +103,19 @@ def start_monitors(configs, outbound_cons, values):
         # get the address of the internal register to write to
         value_config = {}
         if monitor_config["value_type"] == "coil":
-            for co in configs["values"]["coil"]:
+            for co in configs["registers"]["coil"]:
                 if co["id"] == monitor_config["id"]:
                     value_config = co
         elif monitor_config["value_type"] == "discrete_input":
-            for di in configs["values"]["discrete_input"]:
+            for di in configs["registers"]["discrete_input"]:
                 if di["id"] == monitor_config["id"]:
                     value_config = di
         elif monitor_config["value_type"] == "holding_register":
-            for hr in configs["values"]["holding_register"]:
+            for hr in configs["registers"]["holding_register"]:
                 if hr["id"] == monitor_config["id"]:
                     value_config = hr
         elif monitor_config["value_type"] == "input_register":
-            for ir in configs["values"]["input_register"]:
+            for ir in configs["registers"]["input_register"]:
                 if ir["id"] == monitor_config["id"]:
                     value_config = ir
 

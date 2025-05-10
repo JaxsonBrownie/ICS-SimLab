@@ -7,6 +7,14 @@ fi
 
 echo "ICS-SimLab SETUP STARTED"
 
+#sudo apt update && 
+
+#echo "INSTALLING TOOLS"
+#if ! command -v socat &> /dev/null; then
+#    echo "socat is not installed. Installing..."
+#    sudo apt install -y socat
+#fi
+
 echo "DOWN PREVIOUS CONTAINERS"
 docker compose down 
 

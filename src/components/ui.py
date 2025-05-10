@@ -73,27 +73,11 @@ def get_component_info(configs):
 # FUNCTION: create_register_table_rows
 # PURPOSE:  Builds up the table rows for the component registers
 def create_register_table_rows(type, address, count, value, response):
-    for co in response["coil"]:
-        type.append("coil")
-        address.append(co["address"])
-        count.append(co["count"])
-        value.append(co["value"])
-    for di in response["discrete_input"]:
-        type.append("discrete_input")
-        address.append(di["address"])
-        count.append(di["count"])
-        value.append(di["value"])
-    for ir in response["input_register"]:
-        type.append("input_register")
-        address.append(ir["address"])
-        count.append(ir["count"])
-        value.append(ir["value"])
-    for hr in response["holding_register"]:
-        type.append("holding_register")
-        address.append(hr["address"])
-        count.append(hr["count"])
-        value.append(hr["value"])
-
+    for register in response.values():
+        type.append(register["type"])
+        address.append(register["address"])
+        count.append(register["count"])
+        value.append(register["value"])
 
 
 # FUNCTION: create_register_table

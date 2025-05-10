@@ -40,7 +40,7 @@ async def start_servers(configs, context):
 
 # FUNCTION: start_sensor
 # PURPOSE:  Starts a process to read sensor data from SQLite specific to this sensor.
-#           The column is a TEXT datatype to allow for generic inputs. The input "values"
+#           The column is a TEXT datatype to allow for generic inputs. The input "registers"
 #           is a dictonary with ModbusSequentialDataBlock values, corresponding to co
 #           di, hr, and ir as keys.
 def start_sensor(configs, values):
@@ -51,7 +51,7 @@ def start_sensor(configs, values):
     while True:
         # gets values for all value types from the physical databases
         value = ""
-        for co in configs["values"]["coil"]:
+        for co in configs["registers"]["coil"]:
             address = co["address"]
             table = co["physical_value"]
             cursor.execute(f"SELECT value FROM {table} ORDER BY timestamp DESC LIMIT 1")
@@ -60,7 +60,7 @@ def start_sensor(configs, values):
 
             if value and value[0] not in (None, ""):
                 values["co"].setValues(address, int(float(value[0])))
-        for di in configs["values"]["discrete_input"]:
+        for di in configs["registers"]["discrete_input"]:
             address = di["address"]
             table = di["physical_value"]
             cursor.execute(f"SELECT value FROM {table} ORDER BY timestamp DESC LIMIT 1")
@@ -69,7 +69,7 @@ def start_sensor(configs, values):
 
             if value and value[0] not in (None, ""):
                 values["di"].setValues(address, int(float(value[0])))
-        for hr in configs["values"]["holding_register"]:
+        for hr in configs["registers"]["holding_register"]:
             address = hr["address"]
             table = hr["physical_value"]
             cursor.execute(f"SELECT value FROM {table} ORDER BY timestamp DESC LIMIT 1")
@@ -78,7 +78,7 @@ def start_sensor(configs, values):
 
             if value and value[0] not in (None, ""):
                 values["hr"].setValues(address, int(float(value[0])))
-        for ir in configs["values"]["input_register"]:
+        for ir in configs["registers"]["input_register"]:
             address = ir["address"]
             table = ir["physical_value"]
             cursor.execute(f"SELECT value FROM {table} ORDER BY timestamp DESC LIMIT 1")

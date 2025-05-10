@@ -61,10 +61,26 @@ def run_rtu_master(connection):
 
 # FUNCTION: update_register_values
 # PURPOSE:  Updates the "register_values" dictionary with the register values of the modbus server,
-#           which is in the "values" dictionary.
+#           which is in the "registers" dictionary.
 # TODO: improve efficency
 def update_register_values(register_values, values):
     while True:
+        for register in register_values.values():
+            type = register["type"]
+            if type == "coil":
+                modbus_value = values["co"].getValues(register["address"], register["count"])[0]
+                register["value"] = modbus_value
+            elif type == "discrete_input":
+                modbus_value = values["di"].getValues(register["address"], register["count"])[0]
+                register["value"] = modbus_value
+            elif type == "holding_register":
+                modbus_value = values["hr"].getValues(register["address"], register["count"])[0]
+                register["value"] = modbus_value
+            elif type == "input_register":
+                modbus_value = values["ir"].getValues(register["address"], register["count"])[0]
+                register["value"] = modbus_value
+
+        '''
         # create a clone dictionary to hold the "to-be-updated" values
         updated_register_values = register_values.copy()
 
@@ -95,6 +111,8 @@ def update_register_values(register_values, values):
         register_values["discrete_input"] = updated_register_values["discrete_input"].copy()
         register_values["holding_register"] = updated_register_values["holding_register"].copy()
         register_values["input_register"] = updated_register_values["input_register"].copy()
+        '''
+
 
         time.sleep(0.1)
 
@@ -102,28 +120,22 @@ def update_register_values(register_values, values):
 
 # FUNCTION: create_register_values_dict
 # PURPOSE:  Returns a dictionary that is used to store all register values in the following format:
-# "register_values":
 # {
-#    "coil": []
-#    "discrete_input": []
-#    "holding_register": 
-#    [
-#        {
-#            "address": 170
-#            "count": 1
-#            "value": 3013
-#        }
-#    ]
-#    "input_register: []"
+#   id: 
+#   {
+#       "type": "coil",
+#       "address": 1,
+#       "count": 1,
+#       "value": 0,
+#       "io": "input"
+#   }
 # }
 def create_register_values_dict(configs):
     register_values = {}
-    register_values["coil"] = []
-    register_values["discrete_input"] = []
-    register_values["holding_register"] = []
-    register_values["input_register"] = []
-    for co in configs["values"]["coil"]:
+
+    for co in configs["registers"]["coil"]:
         register = {
+            "type": "coil",
             "address": co["address"],
             "count": co["count"],
             "value": False
@@ -132,9 +144,11 @@ def create_register_values_dict(configs):
             register["io"] = co["io"]
         if "id" in co:
             register["id"] = co["id"]
-        register_values["coil"].append(register)
-    for di in configs["values"]["discrete_input"]:
+            register_values[co["id"]] = register
+
+    for di in configs["registers"]["discrete_input"]:
         register = {
+            "type": "discrete_input",
             "address": di["address"],
             "count": di["count"],
             "value": False
@@ -143,9 +157,11 @@ def create_register_values_dict(configs):
             register["io"] = di["io"]
         if "id" in di:
             register["id"] = di["id"]
-        register_values["discrete_input"].append(register)
-    for hr in configs["values"]["holding_register"]:
+            register_values[di["id"]] = register
+
+    for hr in configs["registers"]["holding_register"]:
         register = {
+            "type": "holding_register",
             "address": hr["address"],
             "count": hr["count"],
             "value": False
@@ -154,9 +170,11 @@ def create_register_values_dict(configs):
             register["io"] = hr["io"]
         if "id" in hr:
             register["id"] = hr["id"]
-        register_values["holding_register"].append(register)
-    for ir in configs["values"]["input_register"]:
+            register_values[hr["id"]] = register
+
+    for ir in configs["registers"]["input_register"]:
         register = {
+            "type": "input_register",
             "address": ir["address"],
             "count": ir["count"],
             "value": False
@@ -165,5 +183,6 @@ def create_register_values_dict(configs):
             register["io"] = ir["io"]
         if "id" in ir:
             register["id"] = ir["id"]
-        register_values["input_register"].append(register)
+            register_values[ir["id"]] = register
+
     return register_values

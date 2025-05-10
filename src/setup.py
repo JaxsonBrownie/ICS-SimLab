@@ -419,7 +419,7 @@ def build_hmi_directory(json_content):
         json_config = {
             "inbound_connections": hmi["inbound_connections"],
             "outbound_connections": hmi["outbound_connections"],
-            "values": hmi["values"],
+            "registers": hmi["registers"],
             "monitors": hmi["monitors"],
             "controllers": hmi["controllers"]
         }
@@ -447,7 +447,7 @@ def build_plc_directory(json_content, directory):
         json_config = {
             "inbound_connections": plc["inbound_connections"],
             "outbound_connections": plc["outbound_connections"],
-            "values": plc["values"],
+            "registers": plc["registers"],
             "monitors": plc["monitors"],
             "controllers": plc["controllers"]
         }
@@ -479,7 +479,7 @@ def build_sensor_directory(json_content):
                 "table": f"{sensor['hil']}",
             },
             "inbound_connections": sensor["inbound_connections"],
-            "values": sensor["values"]
+            "registers": sensor["registers"]
         }
         with open(f"{root_path}/simulation/containers/{sensor['name']}/src/config.json", "w") as conf_file:
             conf_file.write(json.dumps(json_config, indent=4))
@@ -508,7 +508,7 @@ def build_actuator_directory(json_content, directory):
                 "physical_values": actuator["physical_values"],
             },
             "inbound_connections": actuator["inbound_connections"],
-            "values": actuator["values"]
+            "registers": actuator["registers"]
         }
         with open(f"{root_path}/simulation/containers/{actuator['name']}/src/config.json", "w") as conf_file:
             conf_file.write(json.dumps(json_config, indent=4))

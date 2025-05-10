@@ -4,9 +4,12 @@ def logic(input_registers, output_registers, state_update_callbacks):
     state_change = True
 
     # get value references
-    tank_level_ref = next((i for i in input_registers["input_register"] if i["address"] == 1), None)
-    tank_input_valve_ref = next((i for i in output_registers["coil"] if i["address"] == 2), None)
-    tank_output_valve_ref = next((i for i in output_registers["coil"] if i["address"] == 3), None)
+    print(input_registers)
+    print(output_registers)
+
+    tank_level_ref = input_registers["tank_level"]
+    tank_input_valve_ref = output_registers["tank_input_valve_state"]
+    tank_output_valve_ref = output_registers["tank_output_valve_state"]
     #plc1_tank_output_state_ref = next((i for i in output_registers["coil"] if i["address"] == 11), None)
 
     # initial writing
@@ -39,4 +42,3 @@ def logic(input_registers, output_registers, state_update_callbacks):
             prev_tank_output_valve = tank_output_valve_ref["value"]
 
         time.sleep(0.1)
-

@@ -75,7 +75,7 @@ async def main():
         physical_values[value["name"]] = ""
 
     # begin physical logic simulation thread
-    logic_thread = Thread(target=logic.logic, args=(physical_values, 0.2))
+    logic_thread = Thread(target=logic.logic, args=(physical_values,))
     logic_thread.daemon = True
     logic_thread.start()
 

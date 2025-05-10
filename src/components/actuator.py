@@ -48,7 +48,7 @@ def start_actuator(configs, values):
     while True:
         # gets values for all value types from the physical databases
         value = ""
-        for co in configs["values"]["coil"]:
+        for co in configs["registers"]["coil"]:
             address = co["address"]
             count = co["count"]
             table = co["physical_value"]
@@ -57,7 +57,7 @@ def start_actuator(configs, values):
             cursor.execute(f"INSERT INTO {table}(value) VALUES(?)", (value,))
             value = cursor.fetchone()
             conn.commit()
-        for di in configs["values"]["discrete_input"]:
+        for di in configs["registers"]["discrete_input"]:
             address = di["address"]
             count = di["count"]
             table = di["physical_value"]
@@ -66,7 +66,7 @@ def start_actuator(configs, values):
             cursor.execute(f"INSERT INTO {table}(value) VALUES(?)", (value,))
             value = cursor.fetchone()
             conn.commit()
-        for hr in configs["values"]["holding_register"]:
+        for hr in configs["registers"]["holding_register"]:
             address = hr["address"]
             count = hr["count"]
             table = hr["physical_value"]
@@ -75,7 +75,7 @@ def start_actuator(configs, values):
             cursor.execute(f"INSERT INTO {table}(value) VALUES(?)", (value,))
             value = cursor.fetchone()
             conn.commit()
-        for ir in configs["values"]["input_register"]:
+        for ir in configs["registers"]["input_register"]:
             address = ir["address"]
             count = ir["count"]
             table = ir["physical_value"]

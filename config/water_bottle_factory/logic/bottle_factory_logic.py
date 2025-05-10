@@ -4,7 +4,7 @@ from threading import Thread
 
 # note that "physical_values" is a dictionary of all the values defined in the JSON
 # the keys are defined in the JSON
-def logic(physical_values, interval):
+def logic(physical_values):
 
     # initial values
     physical_values["tank_level_value"] = 500
