@@ -25,46 +25,44 @@ def retrieve_configs(filename):
 # FUNCTION: get_component_info
 # PURPOSE:  Returns all names and info for all the components in lists
 def get_component_info(configs):
-    hmi_info = []
-    plc_info = []
-    sensor_info = []
-    actuator_info = []
-    hil_info = []
+    hmi_info = {}
+    plc_info = {}
+    sensor_info = {}
+    actuator_info = {}
+    hil_info = {}
 
     if "hmis" in configs:
         for hmi in configs["hmis"]:
-            hmi_info.append({
-                "name": hmi["name"], 
+            hmi_info[hmi["name"]] = {
                 "ip": hmi["network"]["ip"]
-                })
+            }
             
     if "plcs" in configs:
         for plc in configs["plcs"]:
-            plc_info.append({
-                "name": plc["name"], 
+            plc_info[plc["name"]] = {
                 "ip": plc["network"]["ip"]
-                })
+            }
+
     if "sensors" in configs:
         for sensor in configs["sensors"]:
-            sensor_info.append({
-                "name": sensor["name"],
+            sensor_info[sensor["name"]] = {
                 "ip": sensor["network"]["ip"],
-            })
+            }
+
     if "actuators" in configs:
         for actuator in configs["actuators"]:
-            actuator_info.append({
-                "name": actuator["name"],
+            actuator_info[actuator["name"]] = {
                 "ip": actuator["network"]["ip"],
-            })
+            }
+
     if "hils" in configs:
         for hil in configs["hils"]:
             physical_values = []
             for physical_value in hil["physical_values"]:
                 physical_values.append(physical_value["name"])
-            hil_info.append({
-                "name": hil["name"],
+            hil_info[hil["name"]] = {
                 "values": physical_values
-            })
+            }
 
     return hmi_info, plc_info, sensor_info, actuator_info, hil_info
 
@@ -120,143 +118,123 @@ def main():
     # render everything first  
     st.title("Industrial Control System Dashboard")
 
-    st.header("Overall Statistics")
-    st.write(f"Number of Human Machine Interfaces (HMIs): {len(hmi_info)}")
-    st.write(f"Number of Programmable Logic Controllers (PLCs): {len(plc_info)}")
-    st.write(f"Number of Sensors: {len(sensor_info)}")
-    st.write(f"Number of Actuators: {len(actuator_info)}")
-
+    # show system information
+    col1, _, _, _ = st.columns(4)
+    with col1:
+        with st.container(border=True):
+            st.subheader("Devices", divider="orange")
+            st.write(f"Human Machine Interfaces (HMIs): {len(hmi_info)}")
+            st.write(f"Programmable Logic Controllers (PLCs): {len(plc_info)}")
+            st.write(f"Sensors: {len(sensor_info)}")
+            st.write(f"Actuators: {len(actuator_info)}")
     st.divider()
-    st.header("Human Machine Interfaces")
-    st.subheader("Input + Output Registers")
-    hmis = {}
+
+    # show register devices
+    st.header("Human Machine Interfaces", divider="orange")
+    col1, col2, col3, col4 = st.columns(4)
+    columns = {1: col1, 2: col2, 3: col3, 4: col4}
+    column_switcher = 1
+    st_hmis = {}
     for hmi in hmi_info:
-        hmis[hmi["name"]] = st.empty() 
-
-    st.divider()
-    st.header("Programmable Logic Controllers")
-    st.subheader("Input + Output Registers")
-    plcs = {}
+        with columns[column_switcher].container():
+            st.markdown(f"##### {hmi}")
+            st_hmis[hmi] = st.empty()
+            column_switcher = (column_switcher % len(columns)) + 1
+            
+    st.header("Programmable Logic Controllers", divider="orange")
+    col1, col2, col3, col4 = st.columns(4)
+    columns = {1: col1, 2: col2, 3: col3, 4: col4}
+    column_switcher = 1
+    st_plcs = {}
     for plc in plc_info:
-        plcs[plc["name"]] = st.empty() 
+        with columns[column_switcher].container():
+            st.markdown(f"##### {plc}")
+            st_plcs[plc] = st.empty()
+            column_switcher = (column_switcher % len(columns)) + 1
 
-    st.divider()
-    st.header("Sensors")
-    st.subheader("Input Registers")
-    sensors = {}
+    st.header("Sensors", divider="orange")
+    col1, col2, col3, col4 = st.columns(4)
+    columns = {1: col1, 2: col2, 3: col3, 4: col4}
+    column_switcher = 1
+    st_sensors = {}
     for sensor in sensor_info:
-        sensors[sensor["name"]] = st.empty()  
+        with columns[column_switcher].container():
+            st.markdown(f"##### {sensor}")
+            st_sensors[sensor] = st.empty()
+            column_switcher = (column_switcher % len(columns)) + 1
     
-    st.divider()
-    st.header("Actuators") 
-    st.subheader("Output Registers") 
-    actuators = {}
+    st.header("Actuators", divider="orange")
+    col1, col2, col3, col4 = st.columns(4)
+    columns = {1: col1, 2: col2, 3: col3, 4: col4}
+    column_switcher = 1
+    st_actuators = {}
     for actuator in actuator_info:
-        actuators[actuator["name"]] = st.empty()
+        with columns[column_switcher].container():
+            st.markdown(f"##### {actuator}")
+            st_actuators[actuator] = st.empty()
+            column_switcher = (column_switcher % len(columns)) + 1
     
+    # create hardware in the loop graphs
     st.divider()
     st.header("Hardware-in-the-Loops") 
     st.subheader("Physical Values") 
     hils = {}
     graphs = {}
 
-    col1, col2 = st.columns(2, border=True)
-    column_switcher = "col1"
+    col1, col2, col3 = st.columns(3)
+    columns = {1: col1, 2: col2, 3: col3}
+    column_switcher = 1
 
-    for hil in hil_info:
+    for hil in hil_info.values():
         for physical_value in hil["values"]:
-
-            if column_switcher == "col1":
-                hils[physical_value] = col1.empty()
-                graphs[physical_value] = col1.empty() 
-                col1.divider()
-                column_switcher = "col2"
-            elif column_switcher == "col2":
-                hils[physical_value] = col2.empty()
-                graphs[physical_value] = col2.empty()
-                col2.divider()
-                column_switcher = "col1"
+            with columns[column_switcher].container(border=True):
+                hils[physical_value] = st.empty()
+                graphs[physical_value] = st.empty()
+            column_switcher = (column_switcher % len(columns)) + 1
 
     # have a single event loop for API polling (streamlit sucks for multi threaded stuff)
     while True:
         # poll hmi
-        for hmi in hmi_info:
-            hmi_response = requests.get(f"http://{hmi['ip']}:1111/registers").json()
+        for hmi, info in hmi_info.items():
+            hmi_response = requests.get(f"http://{info['ip']}:1111/registers").json()
             hmi_table = create_register_table(hmi_response)
-            hmis[hmi["name"]].dataframe(
-                hmi_table,
-                column_config={
-                    "type": st.column_config.TextColumn("Type", width="medium"),
-                    "value": st.column_config.Column("Value", width="medium"),
-                    "address": st.column_config.NumberColumn("Address", width="medium"),
-                    "count": st.column_config.NumberColumn("Count", width="medium"),
-                },
-                use_container_width=False
-            )
+            st_hmis[hmi].dataframe(hmi_table)
         
         # poll plc
-        for plc in plc_info:
-            plc_response = requests.get(f"http://{plc['ip']}:1111/registers").json()
+        for plc, info in plc_info.items():
+            plc_response = requests.get(f"http://{info['ip']}:1111/registers").json()
             plc_table = create_register_table(plc_response)
-            plcs[plc["name"]].dataframe(
-                plc_table,
-                column_config={
-                    "type": st.column_config.TextColumn("Type", width="medium"),
-                    "value": st.column_config.Column("Value", width="medium"),
-                    "address": st.column_config.NumberColumn("Address", width="medium"),
-                    "count": st.column_config.NumberColumn("Count", width="medium"),
-                },
-                use_container_width=False
-            )
+            st_plcs[plc].dataframe(plc_table)
 
         # poll sensor
-        for sensor in sensor_info:
-            sensor_response = requests.get(f"http://{sensor['ip']}:1111/registers").json()
+        for sensor, info in sensor_info.items():
+            sensor_response = requests.get(f"http://{info['ip']}:1111/registers").json()
             sensor_table = create_register_table(sensor_response)
-            sensors[sensor["name"]].dataframe(
-                sensor_table,
-                column_config={
-                    "type": st.column_config.TextColumn("Type", width="medium"),
-                    "value": st.column_config.Column("Value", width="medium"),
-                    "address": st.column_config.NumberColumn("Address", width="medium"),
-                    "count": st.column_config.NumberColumn("Count", width="medium"),
-                },
-                use_container_width=False
-            )
+            st_sensors[sensor].dataframe(sensor_table)
 
         # poll actuator
-        for actuator in actuator_info:
-            actuator_response = requests.get(f"http://{actuator['ip']}:1111/registers").json()
+        for actuator, info in actuator_info.items():
+            actuator_response = requests.get(f"http://{info['ip']}:1111/registers").json()
             actuator_table = create_register_table(actuator_response)
-            actuators[actuator["name"]].dataframe(
-                actuator_table,
-                column_config={
-                    "type": st.column_config.TextColumn("Type", width="medium"),
-                    "value": st.column_config.Column("Value", width="medium"),
-                    "address": st.column_config.NumberColumn("Address", width="medium"),
-                    "count": st.column_config.NumberColumn("Count", width="medium"),
-                },
-                use_container_width=False
-            )
+            st_actuators[actuator].dataframe(actuator_table)
 
         # poll the physical hil (through the SQLite3 database)
         conn = sqlite3.connect("physical_interactions.db")
-        for hil in hil_info:
+        for hil in hil_info.values():
             for physical_value in hil["values"]:
                 table = physical_value
                 df = pd.read_sql_query(f"SELECT value FROM {table} ORDER BY timestamp DESC LIMIT 1", conn)
                 df["physical_value"] = table
                 hils[physical_value].dataframe(df, column_order=["physical_value", "value"])
 
-
                 df = pd.read_sql_query(f"SELECT timestamp, value FROM {table} ORDER BY timestamp DESC LIMIT 100", conn)
                 df["timestamp"] = pd.to_datetime(df["timestamp"])
                 df["value"] = pd.to_numeric(df["value"])
                 df_grouped = df.groupby('timestamp')[["value"]].mean()
                 
-                chart = alt.Chart(df_grouped.reset_index()).mark_line().encode(
+                chart = alt.Chart(df_grouped.reset_index(), height=325).mark_line().encode(
                     x=alt.X("timestamp:T", title="Time", axis=alt.Axis(format="%M:%S")),
-                    y=alt.Y("value:Q", title="Value")
+                    y=alt.Y("value:Q", title="Value"),
                 )
 
                 graphs[physical_value].altair_chart(chart)

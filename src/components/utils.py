@@ -62,7 +62,6 @@ def run_rtu_master(connection):
 # FUNCTION: update_register_values
 # PURPOSE:  Updates the "register_values" dictionary with the register values of the modbus server,
 #           which is in the "registers" dictionary.
-# TODO: improve efficency
 def update_register_values(register_values, values):
     while True:
         for register in register_values.values():
@@ -145,6 +144,8 @@ def create_register_values_dict(configs):
         if "id" in co:
             register["id"] = co["id"]
             register_values[co["id"]] = register
+        elif "physical_value" in co:
+            register_values[co["physical_value"]] = register
 
     for di in configs["registers"]["discrete_input"]:
         register = {
@@ -158,6 +159,8 @@ def create_register_values_dict(configs):
         if "id" in di:
             register["id"] = di["id"]
             register_values[di["id"]] = register
+        elif "physical_value" in di:
+            register_values[di["physical_value"]] = register
 
     for hr in configs["registers"]["holding_register"]:
         register = {
@@ -171,6 +174,8 @@ def create_register_values_dict(configs):
         if "id" in hr:
             register["id"] = hr["id"]
             register_values[hr["id"]] = register
+        elif "physical_value" in hr:
+            register_values[hr["physical_value"]] = register
 
     for ir in configs["registers"]["input_register"]:
         register = {
@@ -184,5 +189,7 @@ def create_register_values_dict(configs):
         if "id" in ir:
             register["id"] = ir["id"]
             register_values[ir["id"]] = register
+        elif "physical_value" in ir:
+            register_values[ir["physical_value"]] = register
 
     return register_values
