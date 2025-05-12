@@ -24,13 +24,13 @@
                 {
                     "type": "tcp",
                     "ip": "192.168.0.21",
-                    "port": 5020,
+                    "port": 502,
                     "id": "plc1_con"
                 },
                 {
                     "type": "tcp",
                     "ip": "192.168.0.22",
-                    "port": 5020,
+                    "port": 502,
                     "id": "plc2_con"
                 }
             ],
@@ -151,7 +151,7 @@
                 {
                     "type": "tcp",
                     "ip": "192.168.0.21",
-                    "port": 5020
+                    "port": 502
                 }
             ],
             "outbound_connections":
@@ -245,7 +245,7 @@
                 {
                     "type": "tcp",
                     "ip": "192.168.0.22",
-                    "port": 5020
+                    "port": 502
                 }
             ],
             "outbound_connections":
@@ -268,7 +268,7 @@
                 {
                     "type": "tcp",
                     "ip": "192.168.0.21",
-                    "port": "5020",
+                    "port": "502",
                     "id": "plc1_con"
                 }
             ],
