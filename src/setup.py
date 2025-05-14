@@ -505,7 +505,6 @@ def build_actuator_directory(json_content, directory):
         json_config = {
             "database": {
                 "table": f"{actuator['hil']}",
-                "physical_values": actuator["physical_values"],
             },
             "inbound_connections": actuator["inbound_connections"],
             "registers": actuator["registers"]

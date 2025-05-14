@@ -15,7 +15,7 @@
             "name": "hmi",
             "network":
             {
-                "ip": "192.168.0.30",
+                "ip": "192.168.0.40",
                 "docker_network": "vlan1"
             },
             "inbound_connections":
@@ -25,17 +25,17 @@
             [
                 {
                     "type": "tcp",
-                    "ip": "192.168.0.20",
-                    "port": 5020,
+                    "ip": "192.168.0.31",
+                    "port": 502,
                     "id": "plc_con"
                 }
             ],
-            "values":
+            "registers":
             {
                 "coil":
                 [
                     {
-                        "address": 103,
+                        "address": 3,
                         "count": 1,
                         "id": "transfer_switch_state"
                     }
@@ -46,14 +46,23 @@
                 ],
                 "holding_register":
                 [
-
+                    {
+                        "address": 4,
+                        "count": 1,
+                        "id": "switching_threshold"
+                    }
                 ],
                 "input_register":
                 [
                     {
-                        "address": 101,
+                        "address": 1,
                         "count": 1,
                         "id": "solar_panel_reading"
+                    },
+                    {
+                        "address": 2,
+                        "count": 1,
+                        "id": "household_reading"
                     }
                 ]
             },
@@ -64,7 +73,7 @@
                     "id": "solar_panel_reading",
                     "value_type": "input_register",
                     "slave_id": 1,
-                    "address": 30,
+                    "address": 20,
                     "count": 1,
                     "interval": 1
                 },
@@ -75,7 +84,25 @@
                     "slave_id": 1,
                     "address": 10,
                     "count": 1,
-                    "interval": 2
+                    "interval": 1
+                },
+                {
+                    "outbound_connection_id": "plc_con",
+                    "id": "switching_threshold",
+                    "value_type": "holding_register",
+                    "slave_id": 1,
+                    "address": 40,
+                    "count": 1,
+                    "interval": 1
+                },
+                {
+                    "outbound_connection_id": "plc_con",
+                    "id": "household_reading",
+                    "value_type": "input_register",
+                    "slave_id": 1,
+                    "address": 21,
+                    "count": 1,
+                    "interval": 1
                 }
             ],
             "controllers":
@@ -91,15 +118,15 @@
             "logic": "ats_plc_logic.py",
             "network": 
             {
-                "ip": "192.168.0.20",
+                "ip": "192.168.0.31",
                 "docker_network": "vlan1"
             },
             "inbound_connections":
             [
                 {
                     "type": "tcp",
-                    "ip": "192.168.0.20",
-                    "port": 5020
+                    "ip": "192.168.0.31",
+                    "port": 502
                 }
             ],
             "outbound_connections":
@@ -112,10 +139,15 @@
                 {
                     "type": "rtu",
                     "comm_port": "ttyS3",
+                    "id": "hh_pm_con"
+                },
+                {
+                    "type": "rtu",
+                    "comm_port": "ttyS5",
                     "id": "ts_con"
                 }
             ],
-            "values":
+            "registers":
             {
                 "coil":
                 [
@@ -135,10 +167,16 @@
                 "input_register":
                 [
                     {
-                        "address": 30,
+                        "address": 20,
                         "count": 1,
                         "io": "input",
                         "id": "solar_panel_reading"
+                    },
+                    {
+                        "address": 21,
+                        "count": 1,
+                        "io": "input",
+                        "id": "household_reading"
                     }
                 ]
             },
@@ -151,7 +189,16 @@
                     "slave_id": 1,
                     "address": 1,
                     "count": 1,
-                    "interval": 1
+                    "interval": 0.2
+                },
+                {
+                    "outbound_connection_id": "hh_pm_con",
+                    "id": "household_reading",
+                    "value_type": "input_register",
+                    "slave_id": 1,
+                    "address": 1,
+                    "count": 1,
+                    "interval": 0.2
                 }
             ],
             "controllers":
@@ -176,7 +223,7 @@
             "hil": "electrical_hil",
             "network": 
             {
-                "ip": "192.168.0.10",
+                "ip": "192.168.0.21",
                 "docker_network": "vlan1"
             },
             "inbound_connections":
@@ -187,7 +234,7 @@
                     "comm_port": "ttyS2"
                 }
             ],
-            "values":
+            "registers":
             {
                 "coil":
                 [
@@ -208,6 +255,44 @@
                     }
                 ]
             }
+        },
+        {
+            "name": "household_power_meter",
+            "hil": "electrical_hil",
+            "network": 
+            {
+                "ip": "192.168.0.22",
+                "docker_network": "vlan1"
+            },
+            "inbound_connections":
+            [
+                {
+                    "type": "rtu",
+                    "slave_id": 1,
+                    "comm_port": "ttyS4"
+                }
+            ],
+            "registers":
+            {
+                "coil":
+                [
+                ],
+                "discrete_input":
+                [
+                ],
+                "holding_register":
+                [
+                ],
+                "input_register":
+                [
+
+                    {
+                        "address": 1,
+                        "count": 1,
+                        "physical_value": "household_power"
+                    }
+                ]
+            }
         }
     ],
 
@@ -215,11 +300,10 @@
     [
         {
             "name": "transfer_switch",
-            "logic": "transfer_switch_logic.py",
             "hil": "electrical_hil",
             "network": 
             {
-                "ip": "192.168.0.11",
+                "ip": "192.168.0.23",
                 "docker_network": "vlan1"
             },
             "inbound_connections":
@@ -227,10 +311,10 @@
                 {
                     "type": "rtu",
                     "slave_id": 2,
-                    "comm_port": "ttyS4"
+                    "comm_port": "ttyS6"
                 }
             ],
-            "values":
+            "registers":
             {
                 "coil":
                 [
@@ -249,13 +333,7 @@
                 "input_register":
                 [
                 ]
-            },
-            "physical_values":
-            [
-                {
-                    "name": "transfer_switch_state"
-                }
-            ]
+            }
         }
     ],
 
@@ -271,12 +349,12 @@
                     "io": "output"
                 },
                 {
-                    "name": "transfer_switch_state",
-                    "io": "input"
+                    "name": "household_power",
+                    "io": "output"
                 },
                 {
-                    "name": "input_power",
-                    "io": "output"
+                    "name": "transfer_switch_state",
+                    "io": "input"
                 }
             ]
         }
@@ -291,6 +369,10 @@
         {
             "src": "ttyS3",
             "dest": "ttyS4"
+        },
+        {
+            "src": "ttyS5",
+            "dest": "ttyS6"
         }
     ],
 

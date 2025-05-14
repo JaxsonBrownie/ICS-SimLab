@@ -517,13 +517,7 @@
                 "discrete_input": [],
                 "holding_register": [],
                 "input_register": []
-            },
-            "physical_values":
-            [
-                {
-                    "name": "tank_output_valve_state"
-                }
-            ]
+            }
         },
         {
             "name": "conveyor_belt_engine",

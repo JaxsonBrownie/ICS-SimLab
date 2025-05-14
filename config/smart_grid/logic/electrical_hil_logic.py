@@ -4,9 +4,10 @@ from threading import Thread
 
 # note that "physical_values" is a dictionary of all the values defined in the JSON
 # the keys are defined in the JSON
-def logic(physical_values, interval):
+def logic(physical_values):
     # initial values
     physical_values["solar_power"] = 0
+    physical_values["household_power"] = 180
 
     mean = 0
     std_dev = 1
@@ -26,9 +27,7 @@ def logic(physical_values, interval):
 def transfer_switch_sim(physical_values):
     while True:
         if physical_values["transfer_switch_state"] == True:
-            physical_values["input_power"] = physical_values["solar_power"]
-        else:
-            physical_values["input_power"] = 180
+            physical_values["household_power"] = physical_values["solar_power"]
         time.sleep(0.1)
 
 
@@ -39,8 +38,3 @@ def solar_power_sim(y_values, physical_values, entries):
             solar_power = y_values[i]
             physical_values["solar_power"] = solar_power
             time.sleep(1)
-
-
-        
-if __name__ == "__main__":
-    logic({}, 0.2)
