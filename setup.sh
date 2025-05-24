@@ -1,19 +1,23 @@
 #!/bin/bash
 
-if [ -z "$1" ]; then
-    echo "Usage: $0 <config_directory>"
-    exit 1
+if [ "$EUID" -ne 0 ]; then
+  echo "Please run this script with sudo:"
+  echo "sudo $0"
+  exit 1
 fi
 
 echo "ICS-SimLab SETUP STARTED"
 
-#sudo apt update && 
+sudo apt update && 
 
-#echo "INSTALLING TOOLS"
-#if ! command -v socat &> /dev/null; then
-#    echo "socat is not installed. Installing..."
-#    sudo apt install -y socat
-#fi
+echo "INSTALLING TOOLS"
+if ! command -v socat &> /dev/null; then
+    echo "socat is not installed. Installing..."
+    sudo apt install -y socat
+fi
+
+echo "Revoking sudo credentials..."
+sudo -k
 
 echo "DOWN PREVIOUS CONTAINERS"
 docker compose down 
@@ -29,12 +33,3 @@ fi
 echo "ACTIVATING ENVIRONMENT AND INSTALLING REQUIREMENTS"
 source .venv/bin/activate
 pip3 install -r requirements.txt
-
-echo "BUILDING SIMULATION FILES"
-python3 main.py $1
-
-echo "DOCKER_COMPOSE BUILD"
-docker compose build
-
-echo "DOCKER_COMPOSE UP"
-docker compose up
