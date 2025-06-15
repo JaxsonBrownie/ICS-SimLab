@@ -37,19 +37,25 @@
                     "type": "tcp",
                     "ip": "192.168.0.11",
                     "port": 502,
-                    "id": "breaker_con"
+                    "id": "transformer_con"
                 },
                 {
                     "type": "tcp",
                     "ip": "192.168.0.12",
                     "port": 502,
-                    "id": "transformer_con"
+                    "id": "transformer_voltage_transducer_con"
                 },
                 {
                     "type": "tcp",
                     "ip": "192.168.0.13",
                     "port": 502,
-                    "id": "voltage_transducer_con"
+                    "id": "output_voltage_transducer_con"
+                },
+                {
+                    "type": "tcp",
+                    "ip": "192.168.0.14",
+                    "port": 502,
+                    "id": "breaker_con"
                 }
             ],
             "registers":
@@ -93,20 +99,35 @@
                         "address": 31,
                         "count": 1,
                         "io": "input",
-                        "id": "voltage_reading"
+                        "id": "transformer_voltage_reading"
+                    },
+                    {
+                        "address": 32,
+                        "count": 1,
+                        "io": "input",
+                        "id": "output_voltage_reading"
                     }
                 ]
             },
             "monitors":
             [
                 {
-                    "outbound_connection_id": "voltage_transducer_con",
-                    "id": "voltage_reading",
+                    "outbound_connection_id": "transformer_voltage_transducer_con",
+                    "id": "transformer_voltage_reading",
                     "value_type": "input_register",
                     "slave_id": 1,
                     "address": 31,
                     "count": 1,
                     "interval": 0.2
+                },
+                {
+                    "outbound_connection_id": "output_voltage_transducer_con",
+                    "id": "output_voltage_reading",
+                    "value_type": "input_register",
+                    "slave_id": 1,
+                    "address": 31,
+                    "count": 1,
+                    "interval": 0.5
                 }
             ],
             "controllers":
@@ -134,7 +155,38 @@
     "sensors":
     [
         {
-            "name": "voltage_transducer",
+            "name": "transformer_voltage_transducer",
+            "hil": "hil",
+            "network":
+            {
+                "ip": "192.168.0.12",
+                "docker_network": "vlan1"
+            },
+            "inbound_connections":
+            [
+                {
+                    "type": "tcp",
+                    "ip": "192.168.0.12",
+                    "port": 502
+                }
+            ],
+            "registers":
+            {
+                "coil":[],
+                "discrete_input": [],
+                "holding_register": [],
+                "input_register":
+                [
+                    {
+                        "address": 31,
+                        "count": 1,
+                        "physical_value": "transformer_voltage"
+                    }
+                ]
+            }
+        },
+        {
+            "name": "output_voltage_transducer",
             "hil": "hil",
             "network":
             {
@@ -159,7 +211,7 @@
                     {
                         "address": 31,
                         "count": 1,
-                        "physical_value": "voltage"
+                        "physical_value": "output_voltage"
                     }
                 ]
             }
@@ -169,7 +221,7 @@
     "actuators":
     [
         {
-            "name": "breaker",
+            "name": "transformer",
             "hil": "hil",
             "network":
             {
@@ -181,6 +233,37 @@
                 {
                     "type": "tcp",
                     "ip": "192.168.0.11",
+                    "port": 502
+                }
+            ],
+            "registers":
+            {
+                "coil": [],
+                "discrete_input": [],
+                "holding_register": 
+                [
+                    {
+                        "address": 21,
+                        "count": 1,
+                        "physical_value": "tap_position"
+                    }
+                ],
+                "input_register": []
+            }
+        },
+        {
+            "name": "breaker",
+            "hil": "hil",
+            "network":
+            {
+                "ip": "192.168.0.14",
+                "docker_network": "vlan1"
+            },
+            "inbound_connections":
+            [
+                {
+                    "type": "tcp",
+                    "ip": "192.168.0.14",
                     "port": 502
                 }
             ],
@@ -198,37 +281,6 @@
                 "holding_register": [],
                 "input_register": []
             }
-        },
-        {
-            "name": "transformer",
-            "hil": "hil",
-            "network":
-            {
-                "ip": "192.168.0.12",
-                "docker_network": "vlan1"
-            },
-            "inbound_connections":
-            [
-                {
-                    "type": "tcp",
-                    "ip": "192.168.0.12",
-                    "port": 502
-                }
-            ],
-            "registers":
-            {
-                "coil": [],
-                "discrete_input": [],
-                "holding_register": 
-                [
-                    {
-                        "address": 21,
-                        "count": 1,
-                        "physical_value": "tap"
-                    }
-                ],
-                "input_register": []
-            }
         }
     ],
 
@@ -244,11 +296,15 @@
                     "io": "input"
                 },
                 {
-                    "name": "tap",
+                    "name": "tap_position",
                     "io": "input"
                 },
                 {
-                    "name": "voltage",
+                    "name": "transformer_voltage",
+                    "io": "output"
+                },
+                {
+                    "name": "output_voltage",
                     "io": "output"
                 }
             ]

@@ -6,9 +6,9 @@ from threading import Thread
 # the keys are defined in the JSON
 def logic(physical_values):
     # initial values (output only)
-    physical_values["voltage"] = 120
-    physical_values["tap"] = 7
-    print(physical_values)
+    physical_values["transformer_voltage"] = 120
+    physical_values["output_voltage"] = 120
+    physical_values["tap_position"] = 7
 
     # transformer variables
     tap_change_perc = 1.5
@@ -17,16 +17,18 @@ def logic(physical_values):
 
     while True:
         # get the difference in tap position
-        tap_pos_dif = int(physical_values["tap"]) - tap_change_center
+        tap_pos_dif = int(physical_values["tap_position"]) - tap_change_center
 
         # get voltage change
         volt_change = tap_pos_dif * (tap_change_perc / 100) * voltage_normal
-        physical_values["voltage"] = voltage_normal + volt_change
+        physical_values["transformer_voltage"] = voltage_normal + volt_change
 
         # implement breaker
-        #if physical_values["breaker_state"] == 1:
-        #    physical_values["voltage"] = 0
-        #    pass
+        if physical_values["breaker_state"] == 1:
+            physical_values["output_voltage"] = 0
+            pass
+        else:
+            physical_values["output_voltage"] = physical_values["transformer_voltage"]
 
 
         time.sleep(0.1)

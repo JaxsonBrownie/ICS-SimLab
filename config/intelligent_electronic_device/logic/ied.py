@@ -10,7 +10,7 @@ def logic(input_registers, output_registers, state_update_callbacks):
     tap_state = True
 
     # get register references
-    voltage = input_registers["voltage_reading"]
+    voltage = input_registers["transformer_voltage_reading"]
     tap_change = input_registers["tap_change_command"]
     breaker_control_command = output_registers["breaker_control_command"]
     tap_position = output_registers["tap_position"]
@@ -30,10 +30,6 @@ def logic(input_registers, output_registers, state_update_callbacks):
     # create the breaker thread
     breaker_thread = Thread(target=breaker, args=(voltage, breaker_control_command, tap_position, state_update_callbacks, low_bound, high_bound), daemon=True)
     breaker_thread.start()
-
-
-    print(high_bound)
-    print(low_bound)
 
     while True:
         # implement tap change
