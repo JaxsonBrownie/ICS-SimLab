@@ -24,7 +24,7 @@ def retrieve_configs(filename):
 # PURPOSE:  An asynchronous function to be used to start a modbus tcp server. Blocks on the server.
 async def run_tcp_server(connection, context):
     # bind to all interfaces of the container
-    tcp_server = ModbusTcpServer(context=context, address=("0.0.0.0", connection["port"]), ) 
+    tcp_server = ModbusTcpServer(context=context, address=("0.0.0.0", connection["port"])) 
     logging.info(f"Starting TCP Server. IP: {connection['ip']}, Port: {connection['port']}")
     await tcp_server.serve_forever()
 

