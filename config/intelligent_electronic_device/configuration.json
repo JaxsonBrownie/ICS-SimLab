@@ -1,0 +1,270 @@
+{
+    "ui":
+    {
+        "network":
+        {
+            "ip": "192.168.0.111",
+            "port": 8501,
+            "docker_network": "vlan1"
+        }
+    },
+
+    "hmis":
+    [
+    ],
+
+    "plcs":
+    [
+        {
+            "name": "ied",
+            "logic": "ied.py",
+            "network":
+            {
+                "ip": "192.168.0.21",
+                "docker_network": "vlan1"
+            },
+            "inbound_connections":
+            [
+                {
+                    "type": "tcp",
+                    "ip": "192.168.0.21",
+                    "port": 502
+                }
+            ],
+            "outbound_connections":
+            [
+                {
+                    "type": "tcp",
+                    "ip": "192.168.0.11",
+                    "port": 502,
+                    "id": "breaker_con"
+                },
+                {
+                    "type": "tcp",
+                    "ip": "192.168.0.12",
+                    "port": 502,
+                    "id": "transformer_con"
+                },
+                {
+                    "type": "tcp",
+                    "ip": "192.168.0.13",
+                    "port": 502,
+                    "id": "voltage_transducer_con"
+                }
+            ],
+            "registers":
+            {
+                "coil":
+                [
+                    {
+                        "address": 1,
+                        "count": 1,
+                        "io": "output",
+                        "id": "breaker_control_command"
+                    }
+                ],
+                "discrete_input": 
+                [
+                    {
+                        "address": 11,
+                        "count": 1,
+                        "io": "input",
+                        "id": "breaker_state"
+                    }
+                ],
+                "holding_register": 
+                [
+                    {
+                        "address": 21,
+                        "count": 1,
+                        "io": "input",
+                        "id": "tap_change_command"
+                    },
+                    {
+                        "address": 22,
+                        "count": 1,
+                        "io": "output",
+                        "id": "tap_position"
+                    }
+                ],
+                "input_register":
+                [
+                    {
+                        "address": 31,
+                        "count": 1,
+                        "io": "input",
+                        "id": "voltage_reading"
+                    }
+                ]
+            },
+            "monitors":
+            [
+                {
+                    "outbound_connection_id": "voltage_transducer_con",
+                    "id": "voltage_reading",
+                    "value_type": "input_register",
+                    "slave_id": 1,
+                    "address": 31,
+                    "count": 1,
+                    "interval": 0.2
+                }
+            ],
+            "controllers":
+            [
+                {
+                    "outbound_connection_id": "breaker_con",
+                    "id": "breaker_control_command",
+                    "value_type": "coil",
+                    "slave_id": 1,
+                    "address": 1,
+                    "count": 1
+                },
+                {
+                    "outbound_connection_id": "transformer_con",
+                    "id": "tap_position",
+                    "value_type": "holding_register",
+                    "slave_id": 1,
+                    "address": 21,
+                    "count": 1
+                }
+            ]
+        }
+    ],
+
+    "sensors":
+    [
+        {
+            "name": "voltage_transducer",
+            "hil": "hil",
+            "network":
+            {
+                "ip": "192.168.0.13",
+                "docker_network": "vlan1"
+            },
+            "inbound_connections":
+            [
+                {
+                    "type": "tcp",
+                    "ip": "192.168.0.13",
+                    "port": 502
+                }
+            ],
+            "registers":
+            {
+                "coil":[],
+                "discrete_input": [],
+                "holding_register": [],
+                "input_register":
+                [
+                    {
+                        "address": 31,
+                        "count": 1,
+                        "physical_value": "voltage"
+                    }
+                ]
+            }
+        }
+    ],
+
+    "actuators":
+    [
+        {
+            "name": "breaker",
+            "hil": "hil",
+            "network":
+            {
+                "ip": "192.168.0.11",
+                "docker_network": "vlan1"
+            },
+            "inbound_connections":
+            [
+                {
+                    "type": "tcp",
+                    "ip": "192.168.0.11",
+                    "port": 502
+                }
+            ],
+            "registers":
+            {
+                "coil":
+                [
+                    {
+                        "address": 1,
+                        "count": 1,
+                        "physical_value": "breaker_state"
+                    }
+                ],
+                "discrete_input": [],
+                "holding_register": [],
+                "input_register": []
+            }
+        },
+        {
+            "name": "transformer",
+            "hil": "hil",
+            "network":
+            {
+                "ip": "192.168.0.12",
+                "docker_network": "vlan1"
+            },
+            "inbound_connections":
+            [
+                {
+                    "type": "tcp",
+                    "ip": "192.168.0.12",
+                    "port": 502
+                }
+            ],
+            "registers":
+            {
+                "coil": [],
+                "discrete_input": [],
+                "holding_register": 
+                [
+                    {
+                        "address": 21,
+                        "count": 1,
+                        "physical_value": "tap"
+                    }
+                ],
+                "input_register": []
+            }
+        }
+    ],
+
+    "hils":
+    [
+        {
+            "name": "hil",
+            "logic": "ied_hil.py",
+            "physical_values":
+            [
+                {
+                    "name": "breaker_state",
+                    "io": "input"
+                },
+                {
+                    "name": "tap",
+                    "io": "input"
+                },
+                {
+                    "name": "voltage",
+                    "io": "output"
+                }
+            ]
+        }
+    ],
+
+    "serial_networks":
+    [
+    ],
+    
+    "ip_networks":
+    [
+        {
+            "docker_name": "vlan1",
+            "name": "ied_network",
+            "subnet": "192.168.0.0/24"
+        }
+    ]
+}
