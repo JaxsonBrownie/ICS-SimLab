@@ -12,6 +12,7 @@ from flask import Flask, jsonify
 from threading import Thread
 from pymodbus.client import ModbusTcpClient, ModbusSerialClient
 from pymodbus.server import ModbusTcpServer, ModbusSerialServer
+from pymodbus.device import ModbusDeviceIdentification
 from pymodbus.datastore import ModbusSequentialDataBlock, ModbusSlaveContext, ModbusServerContext
 
 logging.basicConfig(level=logging.INFO, format='%(levelname)s - %(message)s')
@@ -34,14 +35,24 @@ except ModuleNotFoundError:
 # FUNCTION: init_inbound_cons
 # PURPOSE:  Starts any tcp/rtu servers configured in the config file for inbound connections
 async def init_inbound_cons(configs, context):
+    # obtain modbus identification (if exists)
+    identity = ModbusDeviceIdentification()
+    if "identity" in configs:
+        identity.MajorMinorRevision = configs["identity"]["major_minor_revision"]
+        identity.ModelName = configs["identity"]["model_name"]
+        identity.ProductCode = configs["identity"]["product_code"]
+        identity.ProductName = configs["identity"]["product_name"]
+        identity.VendorName = configs["identity"]["vendor_name"]
+        identity.VendorUrl = configs["identity"]["vendor_url"]
+
     server_tasks = []
     for connection in configs["inbound_connections"]:
         if connection["type"] == "tcp":            
             # start tcp server thread
-            server_tasks.append(asyncio.create_task(utils.run_tcp_server(connection, context)))
+            server_tasks.append(asyncio.create_task(utils.run_tcp_server(connection, context, identity=identity)))
         elif connection["type"] == "rtu":
             # start rtu slave thread
-            server_tasks.append(asyncio.create_task(utils.run_rtu_slave(connection, context))) 
+            server_tasks.append(asyncio.create_task(utils.run_rtu_slave(connection, context, identity=identity))) 
     # wait for all servers  
     for task in server_tasks:
         await task

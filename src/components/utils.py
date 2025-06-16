@@ -22,9 +22,9 @@ def retrieve_configs(filename):
 
 # FUNCTION: run_tcp_server
 # PURPOSE:  An asynchronous function to be used to start a modbus tcp server. Blocks on the server.
-async def run_tcp_server(connection, context):
+async def run_tcp_server(connection, context, identity=None):
     # bind to all interfaces of the container
-    tcp_server = ModbusTcpServer(context=context, address=("0.0.0.0", connection["port"])) 
+    tcp_server = ModbusTcpServer(context=context, address=("0.0.0.0", connection["port"]), identity=identity) 
     logging.info(f"Starting TCP Server. IP: {connection['ip']}, Port: {connection['port']}")
     await tcp_server.serve_forever()
 
@@ -32,8 +32,8 @@ async def run_tcp_server(connection, context):
 
 # FUNCTION: run_rtu_slave
 # PURPOSE:  An asynchronous function to use for modbus rtu server. Blocks on the server.
-async def run_rtu_slave(connection, context):
-    rtu_slave = ModbusSerialServer(context=context, port=connection["comm_port"], baudrate=9600, timeout=1)
+async def run_rtu_slave(connection, context, identity=None):
+    rtu_slave = ModbusSerialServer(context=context, port=connection["comm_port"], baudrate=9600, timeout=1, identity=identity)
     logging.info(f"Starting RTU Slave. Port: {connection['comm_port']}")
     await rtu_slave.serve_forever()
 

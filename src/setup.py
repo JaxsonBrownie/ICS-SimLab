@@ -445,6 +445,7 @@ def build_plc_directory(json_content, directory):
         
         # create JSON configuration and write into directory
         json_config = {
+            "identity": plc["identity"],
             "inbound_connections": plc["inbound_connections"],
             "outbound_connections": plc["outbound_connections"],
             "registers": plc["registers"],

