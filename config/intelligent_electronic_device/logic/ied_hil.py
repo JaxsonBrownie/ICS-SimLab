@@ -17,7 +17,8 @@ def logic(physical_values):
 
     while True:
         # get the difference in tap position
-        tap_pos_dif = int(physical_values["tap_position"]) - tap_change_center
+        real_tap_pos_dif = max(0, min(int(physical_values["tap_position"]), 17))
+        tap_pos_dif = real_tap_pos_dif - tap_change_center
 
         # get voltage change
         volt_change = tap_pos_dif * (tap_change_perc / 100) * voltage_normal
