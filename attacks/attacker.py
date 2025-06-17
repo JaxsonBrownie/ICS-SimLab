@@ -454,10 +454,36 @@ if __name__ == "__main__":
 -----------------------------------------------------------------
 
 """
+    menuPrompt = """
+-----------------------------------------------------------------
+| Please select an attack to run against the ICS simulation:    |
+|                                                               |
+|    Reconnaissance Attacks                                     |
+|    (0) - address scan                                         |
+|    (1) - function code scan                                   |
+|    (2) - device identification attack                         |
+|                                                               |
+|    Response and Measurement Injection Attacks                 |
+|    (3) - naive sensor read                                    |
+|    (4) - sporadic sensor measurement injection                |
+|                                                               |
+|    Command Injection Attacks                                  |
+|    (5) - force listen mode                                    |
+|    (6) - restart communication                                |
+|                                                               |
+|    Denial of Service Attacks                                  |
+|    (7) - data flood attack                                    |
+|    (8) - connection flood attack                              |
+|                                                               |
+|    (9) - quit                                                 |
+-----------------------------------------------------------------
 
-    while True:
-        # get user input (only as int)
+"""
+
+    selection = -1
+    while selection != 9:
         selection = -1
+        # get user input (only as int)
         try:
             while selection == -1:
                 selection = int(input(menuPrompt))
@@ -479,19 +505,19 @@ if __name__ == "__main__":
             naive_sensor_read(scanned_ips)
         elif selection == 4:
             sporadic_sensor_measurement_injection(scanned_ips)
+        #elif selection == 5:
+        #    calculated_sensor_measure_injection(scanned_ips)
+        #elif selection == 6:
+        #    replayed_measurement_injection(scanned_ips)
+        #elif selection == 7:
+        #    altered_actuator_state(scanned_ips)
+        #elif selection == 8:
+        #    altered_control_set_points(scanned_ips)
         elif selection == 5:
-            calculated_sensor_measure_injection(scanned_ips)
-        elif selection == 6:
-            replayed_measurement_injection(scanned_ips)
-        elif selection == 7:
-            altered_actuator_state(scanned_ips)
-        elif selection == 8:
-            altered_control_set_points(scanned_ips)
-        elif selection == 9:
             force_listen_mode(scanned_ips)
-        elif selection == 10:
+        elif selection == 6:
             restart_communication(scanned_ips)
-        elif selection == 11:
+        elif selection == 7:
             data_flood_attack(scanned_ips)
-        elif selection == 12:
+        elif selection == 8:
             connection_flood_attack(scanned_ips)
