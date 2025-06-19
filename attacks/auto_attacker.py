@@ -10,12 +10,21 @@ import attacker
 import random
 import time
 import subprocess
-from datetime import timezone
 import datetime
+import pyshark
+import threading
+import os
+from datetime import timezone
 #import argparse
 
+# global variables
+#cur_obj = -1
+#lock = threading.Lock()
+
 # constants
-FILENAME = "timestamps/"+datetime.datetime.now(timezone.utc).strftime('%d-%M:%S-timestamps.txt')
+FILEPATH = os.path.dirname(os.path.abspath(__file__))
+PCAP_FILE = FILEPATH + "/pcap/" + datetime.datetime.now(timezone.utc).strftime('%d-%M:%S-output.pcap')
+TIMESTAMP_FILE = FILEPATH + "/timestamp/" + datetime.datetime.now(timezone.utc).strftime('%d-%M:%S-timestamps.txt')
 
 #########################################################################################
 # Objective 1: Reconnaissance
@@ -75,9 +84,9 @@ def disable_devices():
     time.sleep(5)
 
     # force listen mode on found Modbus devices
-    write_timestamp('attack9 : start')
+    write_timestamp('attack5 : start')
     attacker.force_listen_mode(ip_addresses)
-    write_timestamp('attack9 : end')
+    write_timestamp('attack5 : end')
 
     # reset damaged devices
     time.sleep(30)
@@ -96,9 +105,9 @@ def disable_devices_through_restarting():
     time.sleep(5)
 
     # send multiple Restart Communication requests (until enter key is pressed)
-    write_timestamp('attack10 : start')
+    write_timestamp('attack6 : start')
     attacker.restart_communication(ip_addresses)
-    write_timestamp('attack10 : end')
+    write_timestamp('attack6 : end')
 
 
 #########################################################################################
@@ -111,15 +120,15 @@ def dos():
     time.sleep(2)
 
     # flood with connection requests
-    write_timestamp('attack12 : start')
+    write_timestamp('attack8 : start')
     attacker.connection_flood_attack(ip_addresses)
-    write_timestamp('attack12 : end')
+    write_timestamp('attack8 : end')
     time.sleep(5)
 
     # flood with random read requests
-    write_timestamp('attack11 : start')
+    write_timestamp('attack7 : start')
     attacker.data_flood_attack(ip_addresses)
-    write_timestamp('attack11 : end')
+    write_timestamp('attack7 : end')
 
 
 #########################################################################################
@@ -138,7 +147,8 @@ def find_exploits():
 
 
 #########################################################################################
-# Objective 7: Cause power outage for a house # TODO: NOT USED
+# Objective 7: Cause power outage for a house 
+# TODO: NOT USED
 def power_outage():
     # get information to find control set points to change
     write_timestamp('attack0 : start')
@@ -176,7 +186,8 @@ def power_outage():
 
 
 #########################################################################################
-# Objective 8: Burn out transfer switch # TODO: NOT USED
+# Objective 8: Burn out transfer switch 
+# TODO: NOT USED
 def destroy_switch():
     # get information to find values controlling transfer switch
     write_timestamp('attack0 : start')
@@ -214,34 +225,6 @@ def destroy_switch():
 # TODO:
 
 
-# FUNCTION: write_timestamp
-# PURPOSE:  Creates a timestamp into a timestamp file
-def write_timestamp(text):
-    # print to file timestamping when attack starts
-    dt = datetime.datetime.now(timezone.utc)
-    formatted_time = dt.strftime('%H:%M:%S') + f'.{dt.microsecond}'
-
-    # TODO:
-    #with open(FILENAME, 'a') as file:
-    #    file.write(f'{text} : {formatted_time}\n')
-
-
-
-# FUNCTION: start_attack
-# PURPOSE:  Runs a given attack and logs the time stamp
-def start_attack(func, objective_number):
-        # print to file timestamping when attack starts
-        write_timestamp(f'objective{objective_number} : start')
-
-        # perform attack
-        print(f"\n\nObjective {objective_number} started\n\n")
-        func()
-        print(f"\n\nObjective {objective_number} finished\n\n")
-
-        # print to file timestamping when attack ends
-        write_timestamp(f'objective{objective_number} : end')
-
-
 
 # FUNCTION: reset_devices
 # PURPOSE:  Resets devices given their ip addresses
@@ -273,6 +256,84 @@ def reset_devices(ip_addresses):
     print(f"Reset devices {containers}, ips: {ip_addresses}")
 
 
+
+# FUNCTION: write_timestamp
+# PURPOSE:  Creates a timestamp into a timestamp file
+def write_timestamp(text):
+    # print to file timestamping when attack starts
+    dt = datetime.datetime.now(timezone.utc)
+    formatted_time = dt.strftime('%H:%M:%S') + f'.{dt.microsecond}'
+
+    with open(TIMESTAMP_FILE, 'a') as file:
+        file.write(f'{text} : {formatted_time}\n')
+
+
+
+# FUNCTION: start_attack
+# PURPOSE:  Runs a given attack and logs the time stamp
+def start_attack(func, objective_number):
+        # print to file timestamping when attack starts
+        write_timestamp(f'objective{objective_number} : start')
+
+        # perform attack
+        print(f"\n\nObjective {objective_number} started\n\n")
+        func()
+        print(f"\n\nObjective {objective_number} finished\n\n")
+
+        # print to file timestamping when attack ends
+        write_timestamp(f'objective{objective_number} : end')
+
+
+
+# FUNCTION: start_capture
+# PURPOSE:  Will start sniffing packets from the specified network
+#           and builds a PCAP file (similar to wireshark)
+def start_capturing(interface,):
+    capture = pyshark.LiveCapture(
+        interface="ied_network",
+        output_file=PCAP_FILE
+    )
+
+    print(f"Starting capture on {interface} and saving to {os.path.abspath(PCAP_FILE)}")
+    try:
+        capture.sniff()
+    except KeyboardInterrupt:
+        print("Capture interupted")
+    finally:
+        capture.close()
+
+
+# FUNCTION: start_attacking
+# PURPOSE:  Thread function to start the attack cycles
+def start_attacking():
+    while True:
+        selections = list(range(1, 7))
+
+        while selections:
+            # perform a random attack, ensuring each attack is performed once
+            selection = random.choice(selections)
+            selections.remove(selection)
+
+            print("Waiting a random amount of time (3 to 5 minutes) before next attack...")
+            wait_time = random.randint(3 * 1, 5 * 1)
+            #wait_time = random.randint(3 * 60, 5 * 60)
+            time.sleep(wait_time)
+
+            # perform attack
+            if selection == 1:
+                start_attack(recon, 1)
+            elif selection == 2:
+                start_attack(sporadic_injections, 2)
+            elif selection == 3:
+                start_attack(disable_devices, 3)
+            elif selection == 4:
+                start_attack(disable_devices_through_restarting, 4)
+            elif selection == 5:
+                start_attack(dos, 5)
+            elif selection == 6:
+                start_attack(find_exploits, 6)
+
+
 if __name__ == "__main__":
     print(r"""\
     \            _    _            _
@@ -299,33 +360,21 @@ if __name__ == "__main__":
            <.'_.''
              <''
              """)
-    
-    while True:
-        selections = list(range(1, 7))
+    # setup directories
+    os.makedirs(FILEPATH + "/dataset", exist_ok=True)
+    os.makedirs(FILEPATH + "/pcap", exist_ok=True)
+    os.makedirs(FILEPATH + "/timestamp", exist_ok=True)
 
-        while selections:
-            # perform a random attack, ensuring each attack is performed once
-            selection = random.choice(selections)
-            selections.remove(selection)
+    # start thread for running attacks
+    attacker_thread = threading.Thread(target=start_attacking, args=(), daemon=True)
+    attacker_thread.start()
 
-            print("Waiting a random amount of time (3 to 5 minutes) before next attack...")
-            wait_time = random.randint(3 * 60, 5 * 60)
-            time.sleep(wait_time)
+    # start thread for recording packet data
+    #TODO: change interface to be an argument
+    interface = "ied_network"
+    capture_thread = threading.Thread(target=start_capturing, args=(interface,), daemon=True)
+    capture_thread.start()
 
-            # perform attack
-            if selection == 1:
-                start_attack(recon, 1)
-            elif selection == 2:
-                start_attack(sporadic_injections, 2)
-            elif selection == 3:
-                start_attack(disable_devices, 3)
-            elif selection == 4:
-                start_attack(disable_devices_through_restarting, 4)
-            elif selection == 5:
-                start_attack(dos, 5)
-            elif selection == 6:
-                start_attack(find_exploits, 6)
-            #elif selection == 7:
-            #    start_attack(power_outage, 7)
-            #elif selection == 8:
-            #    start_attack(destroy_switch, 8)
+    # block on threads
+    attacker_thread.join()
+    capture_thread.join()

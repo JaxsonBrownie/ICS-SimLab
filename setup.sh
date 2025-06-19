@@ -16,6 +16,13 @@ if ! command -v socat &> /dev/null; then
     sudo apt install -y socat
 fi
 
+#if ! command -v tshark &> /dev/null; then
+#    echo "tshark is not installed. Installing..."
+#    sudo apt install -y tshark
+#fi
+echo ""
+sudo chmod +x /usr/bin/dumpcap
+
 echo "Revoking sudo credentials..."
 sudo -k
 
