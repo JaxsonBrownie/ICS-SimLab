@@ -1,15 +1,17 @@
+#!/usr/bin/env python3
+
+# FILE:     packet_based_generator.py
+# PURPOSE:  Takes in a PCAP and builds a custom dataset with extracted features. The
+#           dataset involves packet-based features.
+
 import csv
-import pyshark
+import argparse
 from scapy.all import rdpcap, IP, ARP, Ether, TCP, UDP
 from scapy.contrib.modbus import ModbusADURequest, ModbusADUResponse
 from datetime import datetime, timezone
 
 
-
 # path to the pcap file
-PCAP_FILE = "./pcap/20241127-11:08-dataset4.pcapng"
-TIMESTAMP_FILE = "./timestamps/27-29:19-timestamps.txt"
-DATASET_FILE = "./datasets/Dataset2.csv"
 
 
 # Function: flag_packet
@@ -105,7 +107,7 @@ def reconstruct_modbus_data(modbus_layer):
 
 # Function: get_attack_data
 # Purpose: Uses the timestamp file to label each attack packet
-def get_attack_data(packet):
+def get_attack_data(packet, timestamp_file):
     # define attack categories
     attack_cat = {"0":"0", "1":"0", "2":"0", "3":"1", "4":"1", "5":"N/A", "6":"N/A",
                "7":"2", "8":"2", "9":"2", "10":"2", "11":"3", "12":"3"}
@@ -114,7 +116,7 @@ def get_attack_data(packet):
     pkt_time = datetime.fromtimestamp(float(packet.time), tz=timezone.utc)
     #pkt_time = pkt_time.strftime(f"%H:%M:%S.{int(packet.time % 1 * 1000):05d}")
 
-    file = open(TIMESTAMP_FILE, 'r')
+    file = open(timestamp_file, 'r')
     lines = file.readlines()
 
     count = 0
@@ -150,8 +152,8 @@ def get_attack_data(packet):
 
 # Function: create_csv
 # Purpose: Builds a CSV file from a parsed PCAP file, applying all required restrictions. 
-def create_csv(packets):
-    with open(DATASET_FILE, mode='w', newline='') as csvfile:
+def create_csv(packets, timestamp_file, output_file):
+    with open(output_file, mode='w', newline='') as csvfile:
         csv_writer = csv.writer(csvfile)
 
         # write header row
@@ -196,7 +198,7 @@ def create_csv(packets):
                 attack_binary = 1
 
                 # read the timestamps file and determine which specfic/obj/category attack it is
-                attack_specific, attack_category, attack_obj = get_attack_data(pkt)
+                attack_specific, attack_category, attack_obj = get_attack_data(pkt, timestamp_file)
             else:
                 attack_binary = 0
                 attack_specific = "N/A"
@@ -210,18 +212,32 @@ def create_csv(packets):
 
 
 if __name__ == "__main__":
-    print(f"PCAP file: {PCAP_FILE}")
-    print(f"TIMESTAMP file: {TIMESTAMP_FILE}")
-    print(f"DATASET file: {DATASET_FILE}")
+    parser = argparse.ArgumentParser()
+    parser.add_argument("-p", "--pcap", required=True)
+    parser.add_argument("-t", "--timestamps", required=True)
+    parser.add_argument("-o", "--output", required=True)
+
+    args = parser.parse_args()
+    pcap_file = args.pcap
+    timestamp_file = args.timestamps
+    output_file = args.output
+
+    #PCAP_FILE = "./pcap/20241127-11:08-dataset4.pcapng"
+    #TIMESTAMP_FILE = "./timestamps/27-29:19-timestamps.txt"
+    #DATASET_FILE = "./datasets/Dataset2.csv"
+
+    print(f"PCAP file: {pcap_file}")
+    print(f"TIMESTAMP file: {timestamp_file}")
+    print(f"DATASET (OUTPUT) file: {output_file}")
     print()
     print(f"Creating dataset from these files")
 
     # read pcap
-    print(f"<1/2> Reading PCAP file: {PCAP_FILE}")
-    packets = rdpcap(PCAP_FILE)
+    print(f"<1/2> Reading PCAP file: {pcap_file}")
+    packets = rdpcap(pcap_file)
 
     # create dataset
     print("<2/2> Creating CSV dataset")
-    create_csv(packets)
+    create_csv(packets, timestamp_file, output_file)
 
     print("Finished!")
