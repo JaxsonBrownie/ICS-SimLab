@@ -445,13 +445,15 @@ def build_plc_directory(json_content, directory):
         
         # create JSON configuration and write into directory
         json_config = {
-            "identity": plc["identity"],
             "inbound_connections": plc["inbound_connections"],
             "outbound_connections": plc["outbound_connections"],
             "registers": plc["registers"],
             "monitors": plc["monitors"],
             "controllers": plc["controllers"]
         }
+        if "identity" in plc:
+            json_config["identity"] = plc["identity"]
+            
         with open(f"{root_path}/simulation/containers/{plc['name']}/src/config.json", "w") as conf_file:
             conf_file.write(json.dumps(json_config, indent=4))
 
@@ -611,7 +613,7 @@ def create_communications(json_content):
     links = []
     for serial_link in json_content["serial_networks"]:
         links.append(subprocess.Popen(["socat", 
-                                       "-d", 
+                                       "-d",
                                        f"pty,raw,echo=0,link={root_path}/simulation/communications/{serial_link['src']}", 
                                        f"pty,raw,echo=0,link={root_path}/simulation/communications/{serial_link['dest']}"]))
 

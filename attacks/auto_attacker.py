@@ -14,6 +14,7 @@ import datetime
 import pyshark
 import threading
 import os
+import argparse
 from datetime import timezone
 #import argparse
 
@@ -290,7 +291,7 @@ def start_attack(func, objective_number):
 #           and builds a PCAP file (similar to wireshark)
 def start_capturing(interface,):
     capture = pyshark.LiveCapture(
-        interface="ied_network",
+        interface=interface,
         output_file=PCAP_FILE
     )
 
@@ -315,8 +316,8 @@ def start_attacking():
             selections.remove(selection)
 
             print("Waiting a random amount of time (3 to 5 minutes) before next attack...")
-            wait_time = random.randint(3 * 1, 5 * 1)
-            #wait_time = random.randint(3 * 60, 5 * 60)
+            #wait_time = random.randint(3 * 1, 5 * 1)
+            wait_time = random.randint(3 * 60, 5 * 60)
             time.sleep(wait_time)
 
             # perform attack
@@ -360,6 +361,12 @@ if __name__ == "__main__":
            <.'_.''
              <''
              """)
+    parser = argparse.ArgumentParser()
+    parser.add_argument("-i", "--interface", required=True)
+
+    args = parser.parse_args()
+    interface = args.interface
+
     # setup directories
     os.makedirs(FILEPATH + "/dataset", exist_ok=True)
     os.makedirs(FILEPATH + "/pcap", exist_ok=True)
@@ -370,8 +377,6 @@ if __name__ == "__main__":
     attacker_thread.start()
 
     # start thread for recording packet data
-    #TODO: change interface to be an argument
-    interface = "ied_network"
     capture_thread = threading.Thread(target=start_capturing, args=(interface,), daemon=True)
     capture_thread.start()
 
