@@ -4,10 +4,6 @@
 
 </div>
 
-<br>
-
-<div style="background-color: rgb(28, 27, 28); padding: 6px 30px; border-radius: 15px">
-
 ## Configuration Directory
 ICS-Sim uses a directory containing configuration information to build a custom ICS simulation. The directory needs to contain the following:
 
@@ -18,17 +14,9 @@ ICS-Sim uses a directory containing configuration information to build a custom 
 
 The name of the configuration file must be `configuration.json` and the name of the logic directory must be `logic`, but the Python files within the logic directory can be named whatever.
 
-</div>
-
-<br>
-
-<div style="background-color: rgb(28, 27, 28); padding: 6px 30px; border-radius: 15px">
-
 ## Predefined Simulations
 This repository has a few pre-defined simulation configurations. They are located within `/config/` at the root of this repository. They are:
 
 1. `smart_grid` - This setup simulates a solar panel system with a PLC acting as an Automatic Transfer Switch between solar panel power input and mains power input.
 
 2. `water_bottle_factory` - This setup simulates a water bottle filling facility. Water bottles are moved from a conveyor belt to underneath an output value, where they are filled up. An tank is also simulated which holds water used to fill the bottles.
-
-</div>
