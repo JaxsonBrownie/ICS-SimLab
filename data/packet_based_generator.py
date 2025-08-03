@@ -214,12 +214,12 @@ def create_csv(packets, timestamp_file, output_file):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("-p", "--pcap", required=True)
-    parser.add_argument("-t", "--timestamps", required=True)
+    parser.add_argument("-t", "--timestamp", required=True)
     parser.add_argument("-o", "--output", required=True)
 
     args = parser.parse_args()
     pcap_file = args.pcap
-    timestamp_file = args.timestamps
+    timestamp_file = args.timestamp
     output_file = args.output
 
     #PCAP_FILE = "./pcap/20241127-11:08-dataset4.pcapng"

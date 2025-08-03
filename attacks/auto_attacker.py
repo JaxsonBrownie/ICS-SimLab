@@ -294,6 +294,7 @@ def start_capturing(interface,):
         interface=interface,
         output_file=PCAP_FILE
     )
+    capture.set_debug()
 
     print(f"Starting capture on {interface} and saving to {os.path.abspath(PCAP_FILE)}")
     try:
@@ -316,8 +317,8 @@ def start_attacking():
             selections.remove(selection)
 
             print("Waiting a random amount of time (3 to 5 minutes) before next attack...")
-            #wait_time = random.randint(3 * 1, 5 * 1)
-            wait_time = random.randint(3 * 60, 5 * 60)
+            wait_time = random.randint(3 * 1, 5 * 1)
+            #wait_time = random.randint(3 * 60, 5 * 60)
             time.sleep(wait_time)
 
             # perform attack
@@ -368,7 +369,7 @@ if __name__ == "__main__":
     interface = args.interface
 
     # setup directories
-    os.makedirs(FILEPATH + "/dataset", exist_ok=True)
+    #os.makedirs(FILEPATH + "/dataset", exist_ok=True)
     os.makedirs(FILEPATH + "/pcap", exist_ok=True)
     os.makedirs(FILEPATH + "/timestamp", exist_ok=True)
 
@@ -377,9 +378,10 @@ if __name__ == "__main__":
     attacker_thread.start()
 
     # start thread for recording packet data
-    capture_thread = threading.Thread(target=start_capturing, args=(interface,), daemon=True)
-    capture_thread.start()
+    #capture_thread = threading.Thread(target=start_capturing, args=(interface,), daemon=True)
+    #capture_thread.start()
+    start_capturing(interface)
 
     # block on threads
+    #capture_thread.join()
     attacker_thread.join()
-    capture_thread.join()
