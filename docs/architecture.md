@@ -3,8 +3,6 @@
 # Architecture
 
 </div>
-<br>
-<div style="background-color: rgb(28, 27, 28); padding: 6px 30px; border-radius: 15px">
 
 ## Overview
 
@@ -20,10 +18,6 @@ ICS/SCADA systems use certain components to control and monitor physical process
 
 - **Hardware-in-the-Loop**\* - HILs are modules that simulate physical interactions. Real ICSs don't use them, as real ICSs simply interact with a real physical environment. This simulation uses Python to implement HIL components for physical environment interaction simulation.
 
-</div>
-<br>
-<div style="background-color: rgb(28, 27, 28); padding: 6px 30px; border-radius: 15px">
-
 ## Containers
 Docker containers are used to virtualise the different ICS components. Containers are more efficient that virtual machines and are far more quicker to deploy.
 
@@ -31,28 +25,12 @@ Docker containers are used to virtualise the different ICS components. Container
 
 This software builds up this YAML file through a Python script that reads a `configuration.json` file.
 
-</div>
-<br>
-<div style="background-color: rgb(28, 27, 28); padding: 6px 30px; border-radius: 15px">
-
 ## Networking (Serial + IP/TCP)
 
 ICSs use serial communication and IP/TCP communication through wireless or wired mediums such as Cat32 cables.
 
 This simulation uses Docker Compose networks to
 
-</div>
-<br>
-<div style="background-color: rgb(28, 27, 28); padding: 6px 30px; border-radius: 15px">
-
 ## Modbus (RTU + TCP)
 
-</div>
-<br>
-<div style="background-color: rgb(28, 27, 28); padding: 6px 30px; border-radius: 15px">
-
 ## 
-
-</div>
-
-<br>
