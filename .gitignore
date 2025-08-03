@@ -8,6 +8,3 @@ __pycache__/
 containers/
 simulation/
 docker-compose.yaml
-dataset/
-pcap/
-timestamp/
