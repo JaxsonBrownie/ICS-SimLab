@@ -3,9 +3,9 @@
 
 # ICS-SimLab
 
-![logo](docs/logo.png)
+![logo](docs/img/logo.png)
 
-**Second development of the ICS simulation program. Designed to simulate general ICS and SCADA systems through a configurable and flexible system.**
+**Second development of the ICS simulation program. Designed to simulate general ICS and SCADA systems through a configurable containerization system.**
 
 </div>
 
@@ -18,7 +18,7 @@ Run `sudo ./start.sh <configuration>` to start the simulation, where `<configura
 
 Pre-configured simulations are found in */config/\**.
 
-E.g. to run a water bottle filling facility simulation, run `sudo ./start.sh config/water_bottle_factory`.
+E.g. to run the water bottle filling facility simulation, run `sudo ./start.sh config/water_bottle_factory`.
 
 </div>
 
