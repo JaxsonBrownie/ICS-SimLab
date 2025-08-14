@@ -317,8 +317,8 @@ def start_attacking():
             selections.remove(selection)
 
             print("Waiting a random amount of time (3 to 5 minutes) before next attack...")
-            wait_time = random.randint(3 * 1, 5 * 1)
-            #wait_time = random.randint(3 * 60, 5 * 60)
+            #wait_time = random.randint(3 * 1, 5 * 1)
+            wait_time = random.randint(3 * 60, 5 * 60)
             time.sleep(wait_time)
 
             # perform attack
@@ -377,11 +377,8 @@ if __name__ == "__main__":
     attacker_thread = threading.Thread(target=start_attacking, args=(), daemon=True)
     attacker_thread.start()
 
-    # start thread for recording packet data
-    #capture_thread = threading.Thread(target=start_capturing, args=(interface,), daemon=True)
-    #capture_thread.start()
+    # start recording packet data
     start_capturing(interface)
 
-    # block on threads
-    #capture_thread.join()
+    # block on thread
     attacker_thread.join()
