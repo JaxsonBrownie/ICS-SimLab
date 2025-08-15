@@ -159,9 +159,11 @@ def create_csv(packets, timestamp_file, output_file):
         csv_writer = csv.writer(csvfile)
 
         # write header row
-        header = ["ether_src_mac", "ether_dst_mac", 
+        header = ["protocol",
+                  "ether_src_mac", "ether_dst_mac", 
                   "ip_src", "ip_dst", "ip_len", "ip_flags_df", "ip_flags_mf", "ip_frag_offset", "ip_id", "ip_ttl", "ip_proto", "ip_checksum", 
                   "tcp_window_size", "tcp_ack", "tcp_seq", "tcp_len", "tcp_stream", "tcp_urgent_pointer", "tcp_flags", "tcp_analysis_ack_rtt", "tcp_analysis_push_bytes_sent", "tcp_analysis_bytes_in_flight",
+                  "frame_time_relative", "frame_time_delta",
                   "modbus_length", "modbus_unit_id", "modbus_func_code", "modbus_data",
                   "attack_specific", "attack_category", "attack_obj", "attack_binary",]
         csv_writer.writerow(header)
@@ -212,8 +214,8 @@ def create_csv(packets, timestamp_file, output_file):
             protocol = get_protocol(pkt)
 
             # ignore UDP TODO: check why this is the case
-            if protocol == "UDP":
-                continue
+            #if protocol == "UDP":
+            #    continue
 
             # data link information
             if "ETH" in pkt:
@@ -227,7 +229,6 @@ def create_csv(packets, timestamp_file, output_file):
 
                 ip_src = ip_layer.src
                 ip_dst = ip_layer.dst
-                print(ip_layer)
                 ip_len = ip_layer.len,
                 ip_flags_df = ip_layer.flags_tree.df
                 ip_flags_mf = ip_layer.flags_tree.mf
@@ -266,22 +267,24 @@ def create_csv(packets, timestamp_file, output_file):
                 #    print("FOUND")
                 #tcp_time_delta = tcp_layer.time_delta
 
-            # Frame information            
+            # frame information            
             frame_time_relative = pkt.frame_info.time_relative
             frame_time_delta = pkt.frame_info.time_delta
 
-            # modbus specific information
-            if protocol == "ModbusTCP":
-                modbus_adu_layer = pkt.getlayer(3)
-                modbus_layer = pkt.getlayer(4)
+            # TODO: extract modbus information
+            # modbus information
+            if "MODBUS" in pkt:
+                print(pkt.modbus)
+                #modbus_adu_layer = pkt.getlayer(3)
+                #modbus_layer = pkt.getlayer(4)
 
-                length = modbus_adu_layer.len if modbus_adu_layer != None else "N/A"
-                unit_id = modbus_adu_layer.unitId if modbus_adu_layer != None else "N/A"
-                func_code = f'{modbus_layer.funcCode:x}' if modbus_layer != None else "N/A"
+                #length = modbus_adu_layer.len if modbus_adu_layer != None else "N/A"
+                #unit_id = modbus_adu_layer.unitId if modbus_adu_layer != None else "N/A"
+                #func_code = f'{modbus_layer.funcCode:x}' if modbus_layer != None else "N/A"
 
                 # rebuild data field
-                if modbus_layer != None:
-                    data, _ = reconstruct_modbus_data(modbus_layer)
+                #if modbus_layer != None:
+                #    data, _ = reconstruct_modbus_data(modbus_layer)
 
             # attack specific information
             if flag_packet(pkt):
@@ -291,10 +294,12 @@ def create_csv(packets, timestamp_file, output_file):
                 attack_specific, attack_category, attack_obj = get_attack_data(pkt, timestamp_file)
 
             # write to csv
-            csv_writer.writerow([ether_src_mac, ether_dst_mac,
-                                 ip_src, ip_dst, ip_len, ip_flags_df, ip_flags_mf, ip_frag_offset, ip_id, ip_ttl, ip_proto, ip_checksum,
+            csv_writer.writerow([protocol,
+                                 ether_src_mac, ether_dst_mac,
+                                 ip_src, ip_dst, ip_len[0], ip_flags_df, ip_flags_mf, ip_frag_offset, ip_id, ip_ttl, ip_proto, ip_checksum,
                                  tcp_window_size, tcp_ack, tcp_seq, tcp_len, tcp_stream, tcp_urgent_pointer, tcp_flags, 
                                  tcp_analysis_ack_rtt, tcp_analysis_push_bytes_sent, tcp_analysis_bytes_in_flight,
+                                 frame_time_relative, frame_time_delta,
                                  modbus_length, modbus_unit_id, modbus_func_code, modbus_data,
                                  attack_specific, attack_category, attack_obj, attack_binary])
 
