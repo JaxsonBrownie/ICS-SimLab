@@ -3,15 +3,15 @@
 # FILE:     packet_based_generator.py
 # PURPOSE:  Takes in a PCAP and builds a custom dataset with extracted features. The
 #           dataset involves packet-based features.
+# NOTE:     The features that this file have been drastically updated compared to the
+#           original published paper.
 
 import csv
 import argparse
+import pyshark
 from scapy.all import rdpcap, IP, ARP, Ether, TCP, UDP
 from scapy.contrib.modbus import ModbusADURequest, ModbusADUResponse
 from datetime import datetime, timezone
-
-
-# path to the pcap file
 
 
 # Function: flag_packet
@@ -24,19 +24,19 @@ def flag_packet(packet):
     is_attack = False
     
     # for IP layer packets
-    if IP in packet:
-        ip_layer = packet[IP]
+    if 'IP' in packet:
+        ip_layer = packet['IP']
 
         # check if packets is to or from the hacker (192.168.0.1)
         if ip_layer.src == hacker_ip or ip_layer.dst == hacker_ip:
             is_attack = True
     
     # for ARP packets
-    if ARP in packet:
-        arp_layer = packet[ARP]
+    if 'ARP' in packet:
+        arp_layer = packet['ARP']
 
         # check if it's an ARP request and the target IP matches
-        if arp_layer.psrc == hacker_ip:  # 1 is ARP request
+        if arp_layer.src.proto_ipv4 == hacker_ip:  # 1 is ARP request
             is_attack = True
     
     return is_attack
@@ -45,23 +45,24 @@ def flag_packet(packet):
 # Function: get_protocol
 # Purpose: From a Scapy packet, returns the relevant protocol as a string
 def get_protocol(packet):
-    protcol = ""
-    if ARP in packet:
-        protcol = "ARP"
-    elif TCP in packet:
+    protcol = packet.highest_layer
+
+    #if 'ARP' in packet:
+    #    protcol = "ARP"
+    #elif 'TCP' in packet:
         # check for ModbusTCP
-        if ModbusADURequest in packet or ModbusADUResponse in packet:
-            protcol = "ModbusTCP"
-        else:
-            protcol = "TCP"
-    elif UDP in packet:
-        protcol = "UDP"
-    elif IP in packet:
-        protcol = "IP"
+    #    if ModbusADURequest in packet or ModbusADUResponse in packet:
+    #        protcol = "ModbusTCP"
+    #    else:
+    #        protcol = "TCP"
+    #elif 'UDP' in packet:
+    #    protcol = "UDP"
+    #elif 'IP' in packet:
+    #    protcol = "IP"
     #elif Ether in packet:
     #    protcol = "Ethernet"
-    else:
-        protcol = "Other"
+    #else:
+    #    protcol = "Other"
     
     return protcol
 
@@ -113,7 +114,8 @@ def get_attack_data(packet, timestamp_file):
                "7":"2", "8":"2", "9":"2", "10":"2", "11":"3", "12":"3"}
 
     # get and format packet time
-    pkt_time = datetime.fromtimestamp(float(packet.time), tz=timezone.utc)
+    pkt_time = packet.sniff_time
+    #pkt_time = datetime.fromtimestamp(float(packet.time), tz=timezone.utc)
     #pkt_time = pkt_time.strftime(f"%H:%M:%S.{int(packet.time % 1 * 1000):05d}")
 
     file = open(timestamp_file, 'r')
@@ -157,23 +159,116 @@ def create_csv(packets, timestamp_file, output_file):
         csv_writer = csv.writer(csvfile)
 
         # write header row
-        header = ["time", "src_mac", "dest_mac", "src_ip", "dest_ip", "protocol",
-                  "length", "unit_id", "func_code", "data",
-                  "attack_specific", "attack_obj", "attack_category", "attack_binary"]
+        header = ["ether_src_mac", "ether_dst_mac", 
+                  "ip_src", "ip_dst", "ip_len", "ip_flags_df", "ip_flags_mf", "ip_frag_offset", "ip_id", "ip_ttl", "ip_proto", "ip_checksum", 
+                  "tcp_window_size", "tcp_ack", "tcp_seq", "tcp_len", "tcp_stream", "tcp_urgent_pointer", "tcp_flags", "tcp_analysis_ack_rtt", "tcp_analysis_push_bytes_sent", "tcp_analysis_bytes_in_flight",
+                  "modbus_length", "modbus_unit_id", "modbus_func_code", "modbus_data",
+                  "attack_specific", "attack_category", "attack_obj", "attack_binary",]
         csv_writer.writerow(header)
 
         for pkt in packets:
-            # remove UDP packets (unwanted)
+            print(f"Processing packet number: {pkt.frame_info.number}")
+
+            # initial instance data TODO: some might not be N/A
+            ether_src_mac = "N/A"
+            ether_dst_mac = "N/A"
+
+            ip_src = "N/A"
+            ip_dst = "N/A"
+            ip_len = "N/A"
+            ip_flags_df = "N/A"
+            ip_flags_mf = "N/A"
+            ip_frag_offset = "N/A"
+            ip_id = "N/A"
+            ip_ttl = "N/A"
+            ip_proto = "N/A"
+            ip_checksum = "N/A"
+
+            tcp_window_size = "N/A"
+            tcp_ack = "N/A"
+            tcp_seq = "N/A"
+            tcp_len = "N/A"
+            tcp_stream = "N/A"
+            tcp_urgent_pointer = "N/A"
+            tcp_flags = "N/A"
+            tcp_analysis_ack_rtt = "N/A"
+            tcp_analysis_push_bytes_sent = "N/A"
+            tcp_analysis_bytes_in_flight = "N/A"
+
+            frame_time_relative = "N/A"
+            frame_time_delta = "N/A"
+
+            modbus_length = "N/A"
+            modbus_unit_id = "N/A"
+            modbus_func_code = "N/A"
+            modbus_data = "N/A"
+
+            attack_specific = "N/A"
+            attack_category = "N/A"
+            attack_obj = "N/A"
+            attack_binary = 0
+        
+            # remove UDP packets (unwanted) TODO: could probably make much easier
             protocol = get_protocol(pkt)
+
+            # ignore UDP TODO: check why this is the case
             if protocol == "UDP":
                 continue
 
-            # standard packet information
-            time = pkt.time
-            src_mac = pkt.src if pkt.haslayer("Ethernet") else "N/A"
-            dst_mac = pkt.dst if pkt.haslayer("Ethernet") else "N/A"
-            src_ip = pkt["IP"].src if pkt.haslayer("IP") else "N/A"
-            dst_ip = pkt["IP"].dst if pkt.haslayer("IP") else "N/A"
+            # data link information
+            if "ETH" in pkt:
+                eth_layer = pkt.eth
+                ether_src_mac = eth_layer.src
+                ether_dst_mac = eth_layer.dst
+
+            # IP information
+            if "IP" in pkt:
+                ip_layer = pkt.ip
+
+                ip_src = ip_layer.src
+                ip_dst = ip_layer.dst
+                print(ip_layer)
+                ip_len = ip_layer.len,
+                ip_flags_df = ip_layer.flags_tree.df
+                ip_flags_mf = ip_layer.flags_tree.mf
+                ip_frag_offset = ip_layer.frag_offset
+                ip_id = ip_layer.id
+                ip_ttl = ip_layer.ttl
+                ip_proto = ip_layer.proto
+                ip_checksum = ip_layer.checksum
+
+            # TCP information
+            if "TCP" in pkt:
+                tcp_layer = pkt.tcp
+                #print(tcp_layer)
+                
+                tcp_window_size = tcp_layer.window_size_value
+                tcp_ack = tcp_layer.ack
+                tcp_seq = tcp_layer.seq
+                tcp_len = tcp_layer.len
+                tcp_stream = tcp_layer.stream
+                tcp_urgent_pointer = tcp_layer.urgent_pointer
+                tcp_flags = tcp_layer.flags
+
+                if hasattr(tcp_layer, "analysis"):
+                    tcp_analysis_ack_rtt = getattr(tcp_layer.analysis, "ack_rtt", "N/A")
+                    tcp_analysis_push_bytes_sent = getattr(tcp_layer.analysis, "push_bytes_sent", "N/A")
+                    tcp_analysis_bytes_in_flight = getattr(tcp_layer.analysis, "bytes_in_flight", "N/A")
+                    #tcp_reassembled_length = getattr(tcp_layer, 'reassembled_length', "N/A")
+
+                    #if 'reassembled' in tcp_layer.field_names:
+                    #    print("Reassembled length found!")
+                    #    reassembled_len = tcp_layer.get_field_value('reassembled.length')
+                    #    print("Length:", reassembled_len)
+                
+                #tcp_time_relative = getattr(tcp_layer, "time_relative", "N/A")
+                #if "time_relative" in tcp_layer.field_names:
+                #    print("FOUND")
+                #tcp_time_delta = tcp_layer.time_delta
+
+            # Frame information            
+            frame_time_relative = pkt.frame_info.time_relative
+            frame_time_delta = pkt.frame_info.time_delta
 
             # modbus specific information
             if protocol == "ModbusTCP":
@@ -187,11 +282,6 @@ def create_csv(packets, timestamp_file, output_file):
                 # rebuild data field
                 if modbus_layer != None:
                     data, _ = reconstruct_modbus_data(modbus_layer)
-            else:
-                length = "N/A"
-                unit_id = "N/A"
-                func_code = "N/A"
-                data = "N/A"
 
             # attack specific information
             if flag_packet(pkt):
@@ -199,16 +289,14 @@ def create_csv(packets, timestamp_file, output_file):
 
                 # read the timestamps file and determine which specfic/obj/category attack it is
                 attack_specific, attack_category, attack_obj = get_attack_data(pkt, timestamp_file)
-            else:
-                attack_binary = 0
-                attack_specific = "N/A"
-                attack_category = "N/A"
-                attack_obj = "N/A"
 
             # write to csv
-            csv_writer.writerow([time, src_mac, dst_mac, src_ip, dst_ip, protocol, 
-                                 length, unit_id, func_code, data, 
-                                 attack_specific, attack_obj, attack_category, attack_binary])
+            csv_writer.writerow([ether_src_mac, ether_dst_mac,
+                                 ip_src, ip_dst, ip_len, ip_flags_df, ip_flags_mf, ip_frag_offset, ip_id, ip_ttl, ip_proto, ip_checksum,
+                                 tcp_window_size, tcp_ack, tcp_seq, tcp_len, tcp_stream, tcp_urgent_pointer, tcp_flags, 
+                                 tcp_analysis_ack_rtt, tcp_analysis_push_bytes_sent, tcp_analysis_bytes_in_flight,
+                                 modbus_length, modbus_unit_id, modbus_func_code, modbus_data,
+                                 attack_specific, attack_category, attack_obj, attack_binary])
 
 
 if __name__ == "__main__":
@@ -222,10 +310,6 @@ if __name__ == "__main__":
     timestamp_file = args.timestamp
     output_file = args.output
 
-    #PCAP_FILE = "./pcap/20241127-11:08-dataset4.pcapng"
-    #TIMESTAMP_FILE = "./timestamps/27-29:19-timestamps.txt"
-    #DATASET_FILE = "./datasets/Dataset2.csv"
-
     print(f"PCAP file: {pcap_file}")
     print(f"TIMESTAMP file: {timestamp_file}")
     print(f"DATASET (OUTPUT) file: {output_file}")
@@ -234,7 +318,8 @@ if __name__ == "__main__":
 
     # read pcap
     print(f"<1/2> Reading PCAP file: {pcap_file}")
-    packets = rdpcap(pcap_file)
+    #packets = rdpcap(pcap_file)
+    packets = pyshark.FileCapture(pcap_file, use_json=True)
 
     # create dataset
     print("<2/2> Creating CSV dataset")
