@@ -169,7 +169,7 @@ def create_csv(packets, timestamp_file, output_file):
         csv_writer.writerow(header)
 
         for pkt in packets:
-            print(f"Processing packet number: {pkt.frame_info.number}")
+            #print(f"Processing packet number: {pkt.frame_info.number}")
 
             # initial instance data TODO: some might not be N/A
             ether_src_mac = "N/A"
@@ -274,7 +274,34 @@ def create_csv(packets, timestamp_file, output_file):
             # TODO: extract modbus information
             # modbus information
             if "MODBUS" in pkt:
-                print(pkt.modbus)
+                #print(pkt.modbus)
+                modbus_layer = pkt.modbus
+
+                modbus_func_code = modbus_layer.func_code
+                
+                # handle requests
+                #if hasattr(modbus_layer, "reference_num"):
+
+                print("===========")
+                for field_name in modbus_layer.field_names:
+                    # ignore non-modbus values
+                    if (field_name == "padding" or
+                        field_name == "response_time" or
+                        field_name == "func_code" or
+                        field_name == "request_frame"):
+                        continue
+                    
+                    print(field_name + ": ", getattr(modbus_layer, field_name))
+
+                # handle request values
+                #if hasattr(modbus_layer, "reference_num"):
+                #    print(modbus_layer)
+                #    print(modbus_layer.reference_num)
+                #    print(modbus_layer.word_cnt) 
+                    #modbus_len = modbus_layer.byte_cnt
+
+
+
                 #modbus_adu_layer = pkt.getlayer(3)
                 #modbus_layer = pkt.getlayer(4)
 
