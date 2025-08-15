@@ -9,8 +9,6 @@ import argparse
 from pyflowmeter.sniffer import create_sniffer
 
 
-
-
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("-p", "--pcap", required=True)
