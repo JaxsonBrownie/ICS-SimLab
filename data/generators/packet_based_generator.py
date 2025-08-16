@@ -283,15 +283,69 @@ def create_csv(packets, timestamp_file, output_file):
                 #if hasattr(modbus_layer, "reference_num"):
 
                 print("===========")
-                for field_name in modbus_layer.field_names:
+                #for field_name in modbus_layer.field_names:
+                    #if getattr(modbus_layer, "data", "").replace(":", "") != "000a":
+                    #    continue
+
                     # ignore non-modbus values
-                    if (field_name == "padding" or
-                        field_name == "response_time" or
-                        field_name == "func_code" or
-                        field_name == "request_frame"):
-                        continue
-                    
+                #    if (field_name == "padding" or
+                #        field_name == "response_time" or
+                        #field_name == "func_code" or
+                #        field_name == "request_frame"):
+                #        continue
+                
+                # create a data field
+                #print(field_name + ": ", getattr(modbus_layer, field_name))
+                modbus_data = ""
+
+                # get address and count values
+                tmp_val = getattr(modbus_layer, "reference_num", "")
+                modbus_data += "" if tmp_val == "" else f'{int(tmp_val):04x}'
+                tmp_val = getattr(modbus_layer, "word_cnt", "")
+                modbus_data += "" if tmp_val == "" else f'{int(tmp_val):04x}'
+                tmp_val = getattr(modbus_layer, "byte_cnt", "")
+                modbus_data += "" if tmp_val == "" else f'{int(tmp_val):02x}'
+
+                #modbus_data += f'{str(getattr(modbus_layer, "reference_num", "")):x}'
+                #modbus_data += f'{str(getattr(modbus_layer, "word_cnt", "")):x}'
+                #modbus_data += f'{str(getattr(modbus_layer, "byte_cnt", "")):x}'
+
+                # get single outputs
+                tmp_val = getattr(modbus_layer, "data", "").replace(":", "")
+                modbus_data += tmp_val # (already hex in this form)
+                #"" if tmp_val == "" else f'{int(tmp_val):02x}'
+
+                # get multiple outputs
+                for field_name in modbus_layer.field_names:
                     print(field_name + ": ", getattr(modbus_layer, field_name))
+                    if field_name.startswith("register_"):
+                        register_name = field_name
+                        register_fields = getattr(modbus_layer, register_name)
+                        #data_fields = getattr(modbus_layer, register_name).field_names
+
+                        # get value and address 
+                        for data in register_fields.field_names:
+                            if data.startswith("regval"):
+                                modbus_value = getattr(register_fields, data)
+                            if data.startswith("regnum"):
+                                modbus_address = getattr(register_fields, data)
+                        
+                        #modbus_data += f'{int(modbus_address):02x}' # TODO: refactor code to not need to find address on return
+                        modbus_data += f'{int(modbus_value):04x}'
+
+                        print(modbus_address)
+                        print(modbus_value)
+                        
+
+                        #for data in data_fields:
+                        #    if data.startswith("regval"):
+                        #        tmp_val = getattr(getattr(modbus_layer, register_name), data, "")
+                        #        modbus_data += f'{int(tmp_val):02x}'
+
+                        #    tmp_val = getattr(getattr(modbus_layer, register_name), data, "")
+                        #    modbus_data += f'{int(tmp_val):02x}'
+                            #modbus_data += str(getattr(getattr(modbus_layer, register_name), data))
+                print(modbus_data)
 
                 # handle request values
                 #if hasattr(modbus_layer, "reference_num"):
