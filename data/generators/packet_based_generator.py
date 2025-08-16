@@ -9,6 +9,7 @@
 import csv
 import argparse
 import pyshark
+import sys
 from scapy.all import rdpcap, IP, ARP, Ether, TCP, UDP
 from scapy.contrib.modbus import ModbusADURequest, ModbusADUResponse
 from datetime import datetime, timezone
@@ -164,7 +165,7 @@ def create_csv(packets, timestamp_file, output_file):
                   "ip_src", "ip_dst", "ip_len", "ip_flags_df", "ip_flags_mf", "ip_frag_offset", "ip_id", "ip_ttl", "ip_proto", "ip_checksum", 
                   "tcp_window_size", "tcp_ack", "tcp_seq", "tcp_len", "tcp_stream", "tcp_urgent_pointer", "tcp_flags", "tcp_analysis_ack_rtt", "tcp_analysis_push_bytes_sent", "tcp_analysis_bytes_in_flight",
                   "frame_time_relative", "frame_time_delta",
-                  "modbus_length", "modbus_unit_id", "modbus_func_code", "modbus_data",
+                  "modbus_func_code", "modbus_data",
                   "attack_specific", "attack_category", "attack_obj", "attack_binary",]
         csv_writer.writerow(header)
 
@@ -200,8 +201,6 @@ def create_csv(packets, timestamp_file, output_file):
             frame_time_relative = "N/A"
             frame_time_delta = "N/A"
 
-            modbus_length = "N/A"
-            modbus_unit_id = "N/A"
             modbus_func_code = "N/A"
             modbus_data = "N/A"
 
@@ -255,47 +254,18 @@ def create_csv(packets, timestamp_file, output_file):
                     tcp_analysis_ack_rtt = getattr(tcp_layer.analysis, "ack_rtt", "N/A")
                     tcp_analysis_push_bytes_sent = getattr(tcp_layer.analysis, "push_bytes_sent", "N/A")
                     tcp_analysis_bytes_in_flight = getattr(tcp_layer.analysis, "bytes_in_flight", "N/A")
-                    #tcp_reassembled_length = getattr(tcp_layer, 'reassembled_length', "N/A")
-
-                    #if 'reassembled' in tcp_layer.field_names:
-                    #    print("Reassembled length found!")
-                    #    reassembled_len = tcp_layer.get_field_value('reassembled.length')
-                    #    print("Length:", reassembled_len)
-                
-                #tcp_time_relative = getattr(tcp_layer, "time_relative", "N/A")
-                #if "time_relative" in tcp_layer.field_names:
-                #    print("FOUND")
-                #tcp_time_delta = tcp_layer.time_delta
 
             # frame information            
             frame_time_relative = pkt.frame_info.time_relative
             frame_time_delta = pkt.frame_info.time_delta
 
-            # TODO: extract modbus information
             # modbus information
             if "MODBUS" in pkt:
-                #print(pkt.modbus)
                 modbus_layer = pkt.modbus
 
                 modbus_func_code = modbus_layer.func_code
-                
-                # handle requests
-                #if hasattr(modbus_layer, "reference_num"):
-
-                print("===========")
-                #for field_name in modbus_layer.field_names:
-                    #if getattr(modbus_layer, "data", "").replace(":", "") != "000a":
-                    #    continue
-
-                    # ignore non-modbus values
-                #    if (field_name == "padding" or
-                #        field_name == "response_time" or
-                        #field_name == "func_code" or
-                #        field_name == "request_frame"):
-                #        continue
-                
-                # create a data field
-                #print(field_name + ": ", getattr(modbus_layer, field_name))
+    
+                # get modbus data
                 modbus_data = ""
 
                 # get address and count values
@@ -306,66 +276,22 @@ def create_csv(packets, timestamp_file, output_file):
                 tmp_val = getattr(modbus_layer, "byte_cnt", "")
                 modbus_data += "" if tmp_val == "" else f'{int(tmp_val):02x}'
 
-                #modbus_data += f'{str(getattr(modbus_layer, "reference_num", "")):x}'
-                #modbus_data += f'{str(getattr(modbus_layer, "word_cnt", "")):x}'
-                #modbus_data += f'{str(getattr(modbus_layer, "byte_cnt", "")):x}'
 
                 # get single outputs
                 tmp_val = getattr(modbus_layer, "data", "").replace(":", "")
                 modbus_data += tmp_val # (already hex in this form)
-                #"" if tmp_val == "" else f'{int(tmp_val):02x}'
 
                 # get multiple outputs
                 for field_name in modbus_layer.field_names:
-                    print(field_name + ": ", getattr(modbus_layer, field_name))
                     if field_name.startswith("register_"):
                         register_name = field_name
                         register_fields = getattr(modbus_layer, register_name)
-                        #data_fields = getattr(modbus_layer, register_name).field_names
 
                         # get value and address 
                         for data in register_fields.field_names:
                             if data.startswith("regval"):
-                                modbus_value = getattr(register_fields, data)
-                            if data.startswith("regnum"):
-                                modbus_address = getattr(register_fields, data)
-                        
-                        #modbus_data += f'{int(modbus_address):02x}' # TODO: refactor code to not need to find address on return
+                                modbus_value = getattr(register_fields, data)                        
                         modbus_data += f'{int(modbus_value):04x}'
-
-                        print(modbus_address)
-                        print(modbus_value)
-                        
-
-                        #for data in data_fields:
-                        #    if data.startswith("regval"):
-                        #        tmp_val = getattr(getattr(modbus_layer, register_name), data, "")
-                        #        modbus_data += f'{int(tmp_val):02x}'
-
-                        #    tmp_val = getattr(getattr(modbus_layer, register_name), data, "")
-                        #    modbus_data += f'{int(tmp_val):02x}'
-                            #modbus_data += str(getattr(getattr(modbus_layer, register_name), data))
-                print(modbus_data)
-
-                # handle request values
-                #if hasattr(modbus_layer, "reference_num"):
-                #    print(modbus_layer)
-                #    print(modbus_layer.reference_num)
-                #    print(modbus_layer.word_cnt) 
-                    #modbus_len = modbus_layer.byte_cnt
-
-
-
-                #modbus_adu_layer = pkt.getlayer(3)
-                #modbus_layer = pkt.getlayer(4)
-
-                #length = modbus_adu_layer.len if modbus_adu_layer != None else "N/A"
-                #unit_id = modbus_adu_layer.unitId if modbus_adu_layer != None else "N/A"
-                #func_code = f'{modbus_layer.funcCode:x}' if modbus_layer != None else "N/A"
-
-                # rebuild data field
-                #if modbus_layer != None:
-                #    data, _ = reconstruct_modbus_data(modbus_layer)
 
             # attack specific information
             if flag_packet(pkt):
@@ -381,7 +307,7 @@ def create_csv(packets, timestamp_file, output_file):
                                  tcp_window_size, tcp_ack, tcp_seq, tcp_len, tcp_stream, tcp_urgent_pointer, tcp_flags, 
                                  tcp_analysis_ack_rtt, tcp_analysis_push_bytes_sent, tcp_analysis_bytes_in_flight,
                                  frame_time_relative, frame_time_delta,
-                                 modbus_length, modbus_unit_id, modbus_func_code, modbus_data,
+                                 modbus_func_code, modbus_data,
                                  attack_specific, attack_category, attack_obj, attack_binary])
 
 
