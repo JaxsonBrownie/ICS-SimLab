@@ -1,11 +1,11 @@
 
 <div style="background-color: rgb(20, 16, 20); padding: 15px 30px; border-radius: 2px; text-align: center;">
 
-# ICS-SimLab
+# Curtin ICS-SimLab
 
 ![logo](docs/img/logo.png)
 
-**Second development of the ICS simulation program. Designed to simulate general ICS and SCADA systems through a configurable containerization system.**
+**"Curtin ICS-SimLab" is a software suite designed to simulate general Industrial Control Systems through a configurable, containerized environment.**
 
 </div>
 
@@ -30,3 +30,8 @@ E.g. to run the water bottle filling facility simulation, run `sudo ./start.sh c
 - Refer to [init.md](docs/init.md) to start a preconfigured simulation.
 - Refer to [architecture.md](docs/architecture.md) to understand the architecture of the simulation.
 - Refer to [configure.md](docs/configure.md) to learn to configure a custom SCADA simulation.
+
+</div>
+
+---
+

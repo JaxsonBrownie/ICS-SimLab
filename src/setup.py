@@ -1,7 +1,10 @@
 #!/usr/bin/env python3
 
+# Copyright (c) 2025 Jaxon Brown
+# Licensed under the MIT License. See LICENSE file in the project root for details.
+
 # FILE: setup.py
-# PURPOSE: Handles createing and building the simulation.
+# PURPOSE: Handles creating and building the simulation.
 
 import yaml
 import json
