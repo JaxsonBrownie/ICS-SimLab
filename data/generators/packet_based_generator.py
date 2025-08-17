@@ -43,31 +43,6 @@ def flag_packet(packet):
     return is_attack
 
 
-# Function: get_protocol
-# Purpose: From a Scapy packet, returns the relevant protocol as a string
-def get_protocol(packet):
-    protcol = packet.highest_layer
-
-    #if 'ARP' in packet:
-    #    protcol = "ARP"
-    #elif 'TCP' in packet:
-        # check for ModbusTCP
-    #    if ModbusADURequest in packet or ModbusADUResponse in packet:
-    #        protcol = "ModbusTCP"
-    #    else:
-    #        protcol = "TCP"
-    #elif 'UDP' in packet:
-    #    protcol = "UDP"
-    #elif 'IP' in packet:
-    #    protcol = "IP"
-    #elif Ether in packet:
-    #    protcol = "Ethernet"
-    #else:
-    #    protcol = "Other"
-    
-    return protcol
-
-
 # Function: reconstruct_modbus_data
 # Purpose: Takes the lowest modbus Scapy layer and rebuilds the data field (only)
 #   as a hex string
@@ -116,8 +91,6 @@ def get_attack_data(packet, timestamp_file):
 
     # get and format packet time
     pkt_time = packet.sniff_time
-    #pkt_time = datetime.fromtimestamp(float(packet.time), tz=timezone.utc)
-    #pkt_time = pkt_time.strftime(f"%H:%M:%S.{int(packet.time % 1 * 1000):05d}")
 
     file = open(timestamp_file, 'r')
     lines = file.readlines()
@@ -170,9 +143,8 @@ def create_csv(packets, timestamp_file, output_file):
         csv_writer.writerow(header)
 
         for pkt in packets:
-            #print(f"Processing packet number: {pkt.frame_info.number}")
 
-            # initial instance data TODO: some might not be N/A
+            # initial instance data
             ether_src_mac = "N/A"
             ether_dst_mac = "N/A"
 
@@ -209,12 +181,8 @@ def create_csv(packets, timestamp_file, output_file):
             attack_obj = "N/A"
             attack_binary = 0
         
-            # remove UDP packets (unwanted) TODO: could probably make much easier
-            protocol = get_protocol(pkt)
-
-            # ignore UDP TODO: check why this is the case
-            #if protocol == "UDP":
-            #    continue
+            # get protocol
+            protocol = pkt.highest_layer
 
             # data link information
             if "ETH" in pkt:
@@ -240,7 +208,6 @@ def create_csv(packets, timestamp_file, output_file):
             # TCP information
             if "TCP" in pkt:
                 tcp_layer = pkt.tcp
-                #print(tcp_layer)
                 
                 tcp_window_size = tcp_layer.window_size_value
                 tcp_ack = tcp_layer.ack
@@ -287,7 +254,7 @@ def create_csv(packets, timestamp_file, output_file):
                         register_name = field_name
                         register_fields = getattr(modbus_layer, register_name)
 
-                        # get value and address 
+                        # get value (address is already included above)
                         for data in register_fields.field_names:
                             if data.startswith("regval"):
                                 modbus_value = getattr(register_fields, data)                        
@@ -330,7 +297,6 @@ if __name__ == "__main__":
 
     # read pcap
     print(f"<1/2> Reading PCAP file: {pcap_file}")
-    #packets = rdpcap(pcap_file)
     packets = pyshark.FileCapture(pcap_file, use_json=True)
 
     # create dataset
