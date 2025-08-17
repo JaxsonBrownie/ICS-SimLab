@@ -6,6 +6,9 @@
 
 **"Curtin ICS-SimLab" is a software suite designed to simulate general Industrial Control Systems through a configurable, containerized environment.**
 
+> This work is supported by a Cross-Campus Cyber Security Research Project
+funded by **Curtin University**.
+
 
 ## Quickstart
 Run `sudo ./start.sh <configuration>` to start the simulation, where `<configuration>` is a directory for a configured simulation.

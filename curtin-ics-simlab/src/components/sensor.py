@@ -27,6 +27,9 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 #
+# This work is supported by a Cross-Campus Cyber Security Research Project
+# funded by **Curtin University**
+#
 # Author: Jaxson Brown
 # Organisation: Curtin University
 # Last Modified: 2025-08-17
