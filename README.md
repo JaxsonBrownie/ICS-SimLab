@@ -24,7 +24,7 @@ Industrial Control Systems (ICSs) manage processes in environments such as chemi
 
 This repository presents **ICS-SimLab**, a Docker-based framework for building configurable ICS simulations aligned with the Purdue Enterprise Reference Architecture. ICS-SimLab supports multiple environments. This repository has 3 predefined simulations built with ICS-SimLab: a solar panel smart grid, a water bottle filling facility, and a network of intelligent electronic devices. 
 
-```
+```yaml
 If you find this work useful, then please consider for citing the paper:
 
 @unpublished{brown2025ics-simlab,
@@ -34,7 +34,6 @@ If you find this work useful, then please consider for citing the paper:
   note         = {Accepted for publication in Proceedings of the First International Workshop on Secure Industrial Control Systems and Industrial IoT},
   institution  = {Curtin University, Curtin University Malaysia, CSIRO}
 }
-
 ```
 
 ## Quickstart
