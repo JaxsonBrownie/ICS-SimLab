@@ -16,6 +16,7 @@ The name of the configuration file must be `configuration.json` and the name of 
 ## JSON Format
 The `configuration.json` file follows a set format. We will implement an example to describe each component of this file. 
 
+---
 ### DEVICES
 
 The JSON file starts of with defining all the devices used in the ICS. It may start like this:
@@ -137,6 +138,7 @@ A sample configuration with a single ***hmi*** device may look like the followin
 }
 ```
 
+---
 ### NETWORKS
 Before we go further, devices depend on serial or IP networks for inter-device communication. This is missing in the above example. These get defined separately in the same JSON file as the following:
 
@@ -150,130 +152,137 @@ Before we go further, devices depend on serial or IP networks for inter-device c
 
 > Note that there must always exists one IP network, and every device must have an IP in it, which is defined under the *network* property (even for serial-only devices).
 
-With correct network definitions, the example would now look like this:
-```
-{
-    "hmis":
-    [
-        {
-            "name": "test_hmi",
-            "network":
-            {
-                "ip": "192.168.1.1",
-                "docker_network": "vlan1"
-            },
-            "inbound_connections": [],
-            "outbound_connections": [],
-            "registers":
-            {
-                "coil": [],
-                "discrete_input": [],
-                "input_register": [],
-                "holding_register": []
-            },
-            "monitors": [],
-            "controllers": []
-        }
-    ],
+With correct network definitions, the example would now look like this (open up <code>configurations.json</code> to view):
 
-    "plcs": [],
-    "sensors": [],
-    "actuators": [],
-    "hils": [],
+<details>
+    <summary><code>configuration.json</code></summary>
 
-    "serial_networks": [],
-    "ip_networks":
-    [
-        {
-            "docker_name": "vlan1",
-            "name": "example_network",
-            "subnet": "192.168.0.0/24"
-        }
-    ]
-}
-```
+    {
+        "hmis":
+        [
+            {
+                "name": "test_hmi",
+                "network":
+                {
+                    "ip": "192.168.1.1",
+                    "docker_network": "vlan1"
+                },
+                "inbound_connections": [],
+                "outbound_connections": [],
+                "registers":
+                {
+                    "coil": [],
+                    "discrete_input": [],
+                    "input_register": [],
+                    "holding_register": []
+                },
+                "monitors": [],
+                "controllers": []
+            }
+        ],
+
+        "plcs": [],
+        "sensors": [],
+        "actuators": [],
+        "hils": [],
+
+        "serial_networks": [],
+        "ip_networks":
+        [
+            {
+                "docker_name": "vlan1",
+                "name": "example_network",
+                "subnet": "192.168.0.0/24"
+            }
+        ]
+    }
+
+</details>
 
 ### MONITORS 
 Continuing with this example, we will add a holding register to the ***hmi*** and add a ***plc***. The ***hmi*** will constantly poll a value from the ***plc***, which will be recorded in the holding register in the ***hmi***. First we will define the ***plc*** and the registers for both devices.
 
-```
-{
-    "hmis":
-    [
-        {
-            "name": "test_hmi",
-            "network":
-            {
-                "ip": "192.168.1.1",
-                "docker_network": "vlan1"
-            },
-            "inbound_connections": [],
-            "outbound_connections": [],
-            "registers":
-            {
-                "coil": [],
-                "discrete_input": [],
-                "input_register": [],
-                "holding_register": 
-                [
-                    {
-                        "address": 200,
-                        "count": 1,
-                        "id": "example_hmi_register"
-                    }
-                ]
-            },
-            "monitors": [],
-            "controllers": []
-        }
-    ],
+<details>
+    <summary><code>configuration.json</code></summary>
 
-    "plcs": 
-    [
-        {
-            "name": "test_plc",
-            "network":
+    {
+        "hmis":
+        [
             {
-                "ip": "192.168.1.2",
-                "docker_network": "vlan1"
-            },
-            "inbound_connections": [],
-            "outbound_connections": [],
-            "registers":
+                "name": "test_hmi",
+                "network":
+                {
+                    "ip": "192.168.1.1",
+                    "docker_network": "vlan1"
+                },
+                "inbound_connections": [],
+                "outbound_connections": [],
+                "registers":
+                {
+                    "coil": [],
+                    "discrete_input": [],
+                    "input_register": [],
+                    "holding_register": 
+                    [
+                        {
+                            "address": 200,
+                            "count": 1,
+                            "id": "example_hmi_register"
+                        }
+                    ]
+                },
+                "monitors": [],
+                "controllers": []
+            }
+        ],
+
+        "plcs": 
+        [
             {
-                "coil": [],
-                "discrete_input": [],
-                "input_register": [],
-                "holding_register": 
-                [
-                    {
-                        "address": 100,
-                        "count": 1,
-                        "id": "example_plc_register"
-                    }
-                ]
-            },
-            "monitors": [],
-            "controllers": []
-        }
-    ],
+                "name": "test_plc",
+                "network":
+                {
+                    "ip": "192.168.1.2",
+                    "docker_network": "vlan1"
+                },
+                "inbound_connections": [],
+                "outbound_connections": [],
+                "registers":
+                {
+                    "coil": [],
+                    "discrete_input": [],
+                    "input_register": [],
+                    "holding_register": 
+                    [
+                        {
+                            "address": 100,
+                            "count": 1,
+                            "id": "example_plc_register"
+                        }
+                    ]
+                },
+                "monitors": [],
+                "controllers": []
+            }
+        ],
 
 
-    "sensors": [],
-    "actuators": [],
-    "hils": [],
+        "sensors": [],
+        "actuators": [],
+        "hils": [],
 
-    "serial_networks": [],
-    "ip_networks":
-    [
-        {
-            "docker_name": "vlan1",
-            "name": "example_network",
-            "subnet": "192.168.0.0/24"
-        }
-    ]
-}
-```
+        "serial_networks": [],
+        "ip_networks":
+        [
+            {
+                "docker_name": "vlan1",
+                "name": "example_network",
+                "subnet": "192.168.0.0/24"
+            }
+        ]
+    }
+
+</details>
 
 Note 2 things. 1, we have created a ***plc*** device. 2, we have given both devices a holding register. The address in the ***hmi*** is 200, and the address in the ***plc*** is 100. We will now configure the ***hmi*** to poll the register in the ***plc***, and make it write this polled value in its own holding register.
 
@@ -283,7 +292,6 @@ The ***hmi*** will need an outbound connection, and the ***plc*** will need a in
 <details>
     <summary><code>configuration.json</code></summary>
 
-    ```
     {
         "hmis":
         [
@@ -377,7 +385,6 @@ The ***hmi*** will need an outbound connection, and the ***plc*** will need a in
             }
         ]
     }
-    ```
 
 </details>
 
@@ -386,7 +393,6 @@ A *monitor* will then be configured on the ***hmi*** to implement to polling fun
 <details>
     <summary><code>configuration.json</code></summary>
 
-    ```
     {
         "hmis":
         [
@@ -490,14 +496,18 @@ A *monitor* will then be configured on the ***hmi*** to implement to polling fun
             }
         ]
     }
-    ```
-
 </details>
 
 
-We now have a ***hmi*** device that constantly polls a ***plc***. Currently though, no actual values are being exchanged. We can add a ***sensor*** that the ***plc*** can consistently poll from. We will
+We now have a ***hmi*** device that constantly polls a ***plc***. Currently though, no actual values are being exchanged. We can add a ***sensor*** that the ***plc*** can consistently poll from.
 
-
+TODO: finish off documentation
+- sensor
+- hil
+- actuator
+- controller
+- logic file
+- ui
 
 ## Logic
 Certain devices need to have logic implemented into them. For exampel, PLCs need to be able to map input to output. Below are all the ways devices need logic.
