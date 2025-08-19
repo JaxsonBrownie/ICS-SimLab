@@ -64,10 +64,10 @@ Below are descriptions of what each script does, noting that the specific config
 
 - `hmi.py` - Starts configured Modbus RTU/TCP masters/clients. Continuously polls for values from PLCs and visually displays it.
 
-- `plc.py` - S
+- `plc.py` - Starts any configured Modbus RTU/TCP masters/clients and any slaves/servers. Executes any controllers (to write to other devices) and monitors (to monitors data from other devices). Runs a predefined Python script that handles any internal logic, which involves reading internal registers and writing to other internal registers.
 
-`actuator.py` - Starts configured Modbus RTU/TCP slaves/servers. Continuously writes Modbus register values from the slave/server to the SQLite3 database.
+- `actuator.py` - Starts configured Modbus RTU/TCP slaves/servers. Continuously writes Modbus register values from the slave/server to the SQLite3 database.
 
 - `sensor.py` - Starts configured Modbus RTU/TCP slaves/servers. Continuously reads values from the SQLite3 database and writes them to Modbus register values in the slave/server.
 
-`hil.py` - Starts
+- `hil.py` - Connects to the SQLite3 database and begins altering values from the database based on some predefined python file.
