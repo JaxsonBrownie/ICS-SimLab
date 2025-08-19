@@ -199,6 +199,8 @@ With correct network definitions, the example would now look like this (open up 
 
 </details>
 
+---
+
 ### MONITORS 
 Continuing with this example, we will add a holding register to the ***hmi*** and add a ***plc***. The ***hmi*** will constantly poll a value from the ***plc***, which will be recorded in the holding register in the ***hmi***. First we will define the ***plc*** and the registers for both devices.
 
