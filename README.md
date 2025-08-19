@@ -45,6 +45,8 @@ E.g. to run the water bottle filling facility simulation, run `sudo ./start.sh c
 
 
 ## Documentation
-- Refer to [init.md](docs/init.md) to start a preconfigured simulation.
-- Refer to [architecture.md](docs/architecture.md) to understand the architecture of the simulation.
-- Refer to [configure.md](docs/configure.md) to learn to configure a custom SCADA simulation.
+1. Refer to [init.md](docs/init.md) to start a preconfigured simulation.
+2. Refer to [architecture.md](docs/architecture.md) to understand the architecture of the simulation.
+3. Refer to [configure.md](docs/configure.md) to learn to configure a custom SCADA simulation.
+
+It is recommended to read the documentation in this order.

@@ -1,3 +1,103 @@
 {
-    
+    "hmis":
+[
+        {
+            "name": "test_hmi",
+            "network":
+            {
+                "ip": "192.168.1.1",
+                "docker_network": "vlan1"
+            },
+            "inbound_connections": [],
+            "outbound_connections": 
+            [
+                {
+                    "type": "tcp",
+                    "ip":"192.168.1.2",
+                    "port": 502,
+                    "id": "connection_to_plc"
+                }
+            ],
+            "registers":
+            {
+                "coil": [],
+                "discrete_input": [],
+                "input_register": [],
+                "holding_register": 
+                [
+                    {
+                        "address": 200,
+                        "count": 1,
+                        "id": "example_hmi_register"
+                    }
+                ]
+            },
+            "monitors": 
+            [
+                {
+                    "outbound_connection_id": "connection_to_plc",
+                    "id": "example_hmi_register",
+                    "value_type": "holding_register",
+                    "address": 100,
+                    "count": 1,
+                    "interval": 1.5
+                }
+            ],
+            "controllers": []
+        }
+    ],
+
+    "plcs": 
+    [
+        {
+            "name": "test_plc",
+            "network":
+            {
+                "ip": "192.168.1.2",
+                "docker_network": "vlan1"
+            },
+            "inbound_connections": 
+            [
+                {
+                    "type": "tcp",
+                    "ip": "192.168.1.2",
+                    "port": 502,
+                    "id": "connection_from_hmi"
+                }
+
+            ],
+            "outbound_connections": [],
+            "registers":
+            {
+                "coil": [],
+                "discrete_input": [],
+                "input_register": [],
+                "holding_register": 
+                [
+                    {
+                        "address": 100,
+                        "count": 1,
+                        "id": "example_plc_register"
+                    }
+                ]
+            },
+            "monitors": [],
+            "controllers": []
+        }
+    ],
+
+
+    "sensors": [],
+    "actuators": [],
+    "hils": [],
+
+    "serial_networks": [],
+    "ip_networks":
+    [
+        {
+            "docker_name": "vlan1",
+            "name": "example_network",
+            "subnet": "192.168.0.0/24"
+        }
+    ]
 }

@@ -81,7 +81,6 @@
                     "outbound_connection_id": "plc1_con",
                     "id": "tank_level",
                     "value_type": "input_register",
-                    "slave_id": 1,
                     "address": 1,
                     "count": 1,
                     "interval": 0.5
