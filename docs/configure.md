@@ -201,7 +201,8 @@ With correct network definitions, the example would now look like this (open up 
 
 ---
 
-### MONITORS 
+### REGISTERS
+
 Continuing with this example, we will add a holding register to the ***hmi*** and add a ***plc***. The ***hmi*** will constantly poll a value from the ***plc***, which will be recorded in the holding register in the ***hmi***. First we will define the ***plc*** and the registers for both devices.
 
 <details>
@@ -285,6 +286,8 @@ Continuing with this example, we will add a holding register to the ***hmi*** an
     }
 
 </details>
+
+### CONNECTIONS
 
 Note 2 things. 1, we have created a ***plc*** device. 2, we have given both devices a holding register. The address in the ***hmi*** is 200, and the address in the ***plc*** is 100. We will now configure the ***hmi*** to poll the register in the ***plc***, and make it write this polled value in its own holding register.
 
@@ -389,6 +392,8 @@ The ***hmi*** will need an outbound connection, and the ***plc*** will need a in
     }
 
 </details>
+
+### MONITORS
 
 A *monitor* will then be configured on the ***hmi*** to implement to polling functionality. Note how the *outbound_connection_id* for the monitor uses the previously defined outbound connection, and that the address value in the monitor refers to the ***plcs*** register address. The *id* for the monitor refers to the register within the ***hmi*** where this read value will be written to.
 
@@ -500,6 +505,7 @@ A *monitor* will then be configured on the ***hmi*** to implement to polling fun
     }
 </details>
 
+### SENSORS / ACTUATORS
 
 We now have a ***hmi*** device that constantly polls a ***plc***. Currently though, no actual values are being exchanged. We can add a ***sensor*** that the ***plc*** can consistently poll from.
 
@@ -511,7 +517,7 @@ TODO: finish off documentation
 - logic file
 - ui
 
-## Logic
+### LOGIC
 Certain devices need to have logic implemented into them. For exampel, PLCs need to be able to map input to output. Below are all the ways devices need logic.
 1. To map input registers to output registers. This is relevant for PLCs.
 2. To write to other devices. This 
