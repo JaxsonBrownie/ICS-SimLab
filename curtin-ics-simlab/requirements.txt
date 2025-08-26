@@ -3,7 +3,7 @@ jsonschema==4.23.0
 matplotlib==3.10.1
 numpy==1.26.1
 pandas==2.2.3
-pymodbus==2.5.3
+pymodbus==3.6.9
 pyparsing==3.2.3
 pyserial==3.5
 python-nmap==0.7.1
