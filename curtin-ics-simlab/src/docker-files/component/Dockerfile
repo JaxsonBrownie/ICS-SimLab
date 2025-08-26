@@ -4,7 +4,7 @@ FROM python:3.13-slim
 RUN pip install --upgrade pip
 
 # Install required Python packages
-RUN pip3 install pymodbus==3.6.9
+RUN pip3 install pymodbus==3.11.1
 RUN pip3 install pyserial
 RUN pip3 install numpy
 RUN pip3 install flask
