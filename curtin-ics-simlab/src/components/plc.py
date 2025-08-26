@@ -32,7 +32,7 @@
 #
 # Author: Jaxson Brown
 # Organisation: Curtin University
-# Last Modified: 2025-08-17
+# Last Modified: 2025-08-26
 # -----------------------------------------------------------------------------
 
 # FILE PURPOSE: Implements the functionality of a PLC. The configurations are taken from
@@ -42,6 +42,7 @@ import asyncio
 import time
 import logging
 import utils
+from utils import StateAwareSlaveContext
 from flask import Flask, jsonify
 from threading import Thread
 from pymodbus.client import ModbusTcpClient, ModbusSerialClient
@@ -54,8 +55,9 @@ logging.getLogger('werkzeug').setLevel(logging.ERROR)
 
 app = Flask(__name__)
 
-# global variables (only used for endpoints)
-register_values = {}
+# global variables 
+register_values = {} # (only used for endpoints)
+listen_only = False
 
 # here we import the defined logic
 # the logic will always be in a python file called logic.py, which gets copied to the container
@@ -288,6 +290,7 @@ def separate_io_registers(register_values):
     return input_registers, output_registers
 
 
+
 # define the flask endpoint
 @app.route("/registers", methods=['GET'])
 def get_registers_route():
@@ -295,9 +298,11 @@ def get_registers_route():
     return jsonify(register_values)
 
 
+
 # define function to run flask in another thread
 def flask_app(flask_app):
     flask_app.run(host="0.0.0.0", port=1111)
+
 
 
 # FUNCTION: main
@@ -314,7 +319,7 @@ async def main():
     di = ModbusSequentialDataBlock.create()
     hr = ModbusSequentialDataBlock.create()
     ir = ModbusSequentialDataBlock.create()
-    slave_context = ModbusSlaveContext(co=co, di=di, hr=hr, ir=ir)
+    slave_context = StateAwareSlaveContext(co=co, di=di, hr=hr, ir=ir)
     context = ModbusServerContext(slaves=slave_context, single=True)
 
     # start any inbound connection servers (tcp, rtu or both) with the same context
@@ -364,6 +369,8 @@ async def main():
     # block (useful if no servers or monitors are made)
     while True:
         time.sleep(1)
+
+
 
 if __name__ == "__main__":
     asyncio.run(main())

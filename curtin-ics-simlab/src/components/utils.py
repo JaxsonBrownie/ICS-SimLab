@@ -32,7 +32,7 @@
 #
 # Author: Jaxson Brown
 # Organisation: Curtin University
-# Last Modified: 2025-08-17
+# Last Modified: 2025-08-26
 # -----------------------------------------------------------------------------
 
 # FILE PURPOSE: Common functions to be used in all components
@@ -42,6 +42,87 @@ import time
 import logging
 from pymodbus.client import ModbusTcpClient, ModbusSerialClient
 from pymodbus.server import ModbusTcpServer, ModbusSerialServer
+from pymodbus.transaction import ModbusSocketFramer
+from pymodbus.pdu import ModbusRequest
+from pymodbus.factory import ServerDecoder
+from pymodbus.diag_message import DiagnosticStatusRequest
+from pymodbus.datastore import ModbusSlaveContext, ModbusSequentialDataBlock
+
+# GLOBAL VARIABLES
+listen_only = False
+
+
+
+# CLASS:    CustomDiagnosticRequest
+# PURPOSE:  Implements function code 8 (diagnostics)
+#class CustomDiagnosticRequest(ModbusRequest):
+#    function_code = 8
+
+    # constructor
+#    def __init__(self, sub_function=0, data=b''):
+#        super().__init__()
+#        self.sub_function = sub_function
+#        self.data = data
+
+    # handle decoding requests
+#    def decode(self, data):
+#        self.sub_function = int.from_bytes(data[0:2], 'big')
+#        self.data = data[2:]
+
+    # handle post decoding execution
+#    def execute(self, context):
+#        global listen_only
+
+        # force listen only
+#        if self.sub_function == 4:
+#            print("Entering Listen Only mode...")
+#            listen_only = True
+#            return None
+        
+        # echo request otherwise
+#        return self
+
+
+
+# CLASS:    CustomServerDecoder
+# PURPOSE:  Implements custom request decoders
+#class CustomServerDecoder(ServerDecoder):
+#    def __init__(self):
+#        super().__init__()
+#        self.register(CustomDiagnosticRequest)
+
+
+class StateAwareSlaveContext(ModbusSlaveContext):
+    # contructor
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.listen_only = False
+    
+    # overrise th PDU processor to handle state change before delegating to standard datastore
+    def execute(self, request):
+        # handle function code 8
+        if isinstance(request, DiagnosticStatusRequest):
+            # handle subfunction 1 - restart communications 
+            if request.sub_function_code == 0x01:
+                if self.listen_only:
+                    print("Received RESTART command. Returning to NORMAL mode.")
+                    self.listen_only = False
+                return request
+            
+            # handle subfunction 4 - force listen only mode
+            if request.sub_function_code == 0x04:
+                print("Received FORCE LISTEN ONLY command.")
+                self.listen_only = True
+                return request
+        
+        # if in force listen mode, ignore all other requests
+        if self.listen_only:
+            print("Ignoring request")
+            return None
+        
+        # else use default handler
+        return super().execute(request)
+
 
 
 # FUNCTION: retrieve_configs
@@ -56,9 +137,13 @@ def retrieve_configs(filename):
 
 # FUNCTION: run_tcp_server
 # PURPOSE:  An asynchronous function to be used to start a modbus tcp server. Blocks on the server.
-async def run_tcp_server(connection, context, identity=None):
+async def run_tcp_server(connection, context, identity=None):    
     # bind to all interfaces of the container
-    tcp_server = ModbusTcpServer(context=context, address=("0.0.0.0", connection["port"]), identity=identity) 
+    tcp_server = ModbusTcpServer(
+        context=context, 
+        address=("0.0.0.0", connection["port"]), 
+        identity=identity,
+    ) 
     logging.info(f"Starting TCP Server. IP: {connection['ip']}, Port: {connection['port']}")
     await tcp_server.serve_forever()
 
