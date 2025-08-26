@@ -43,10 +43,11 @@ import logging
 from pymodbus.client import ModbusTcpClient, ModbusSerialClient
 from pymodbus.server import ModbusTcpServer, ModbusSerialServer
 from pymodbus.transaction import ModbusSocketFramer
-from pymodbus.pdu import ModbusRequest
+from pymodbus.pdu import ModbusRequest, ModbusResponse, ExceptionResponse
 from pymodbus.factory import ServerDecoder
-from pymodbus.diag_message import ForceListenOnlyModeRequest
+from pymodbus.diag_message import ForceListenOnlyModeRequest, DiagnosticStatusRequest
 from pymodbus.datastore import ModbusSlaveContext, ModbusSequentialDataBlock
+from pymodbus.exceptions import ModbusIOException
 
 # GLOBAL VARIABLES
 listen_only = False
@@ -84,6 +85,65 @@ listen_only = False
 
 
 
+
+
+# ----------------------------------------------------------------------- #
+# Custom Synchronous Modbus TCP Server to detect ForceListenOnlyModeRequest
+# ----------------------------------------------------------------------- #
+'''
+class CustomModbusTcpServer(ModbusTcpServer):
+    """
+    A custom synchronous Modbus TCP Server that can detect when a
+    ForceListenOnlyModeRequest has been sent.
+    """
+    def __init__(self, context, **kwargs):
+        super().__init__(context, **kwargs)
+        print("ASFKJDSKFNSKLJG JSBDGBSHLIGBLHSDBGHJBGLBGIJLBSDKJLBFSJLBGLJ")
+
+    def process_request(self, request):
+        print("NIGGA")
+        return super().process_request(request)
+
+
+    def execute(self, request: ModbusRequest):
+        """
+        Execute the request and check for ForceListenOnlyModeRequest.
+        This method is synchronous.
+
+        :param request: The incoming Modbus request.
+        :return: The Modbus response.
+        """
+        print(f"Received request: {request}")
+
+        # Check if the received request is a ForceListenOnlyModeRequest
+        if isinstance(request, ForceListenOnlyModeRequest):
+            print("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
+            print("!!! ForceListenOnlyModeRequest DETECTED by server !!!")
+            print("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
+            # In a real synchronous scenario, you would implement specific logic here.
+            # For this example, we'll just log it and return a successful response
+            # to acknowledge the command.
+            return ModbusResponse() # A simple, empty response for acknowledge
+        try:
+            # If it's not a ForceListenOnlyModeRequest, proceed with normal synchronous execution
+            response = super().execute(request)
+        except ModbusIOException as exc:
+            print(f"Error executing request: {exc}")
+            response = ExceptionResponse(request.function_code, exc.exception_code)
+        return response
+'''
+
+
+
+
+
+
+
+
+
+
+
+
 # CLASS:    CustomServerDecoder
 # PURPOSE:  Implements custom request decoders
 #class CustomServerDecoder(ServerDecoder):
@@ -91,7 +151,7 @@ listen_only = False
 #        super().__init__()
 #        self.register(CustomDiagnosticRequest)
 
-# TODO: NOT WORKING
+'''
 class StateAwareSlaveContext(ModbusSlaveContext):
     # contructor
     def __init__(self, *args, **kwargs):
@@ -122,6 +182,30 @@ class StateAwareSlaveContext(ModbusSlaveContext):
         
         # else use default handler
         return super().execute(request)
+'''
+
+
+
+
+class CustomDiagnosticRequest(DiagnosticStatusRequest):
+    # constructor
+    def __init__(self, sub_function_code=0, data=b''):
+        super().__init__(sub_function_code=sub_function_code, data=data)
+
+    def execute(self, context):
+        global listen_only
+
+        return super().execute(context)
+    
+
+    
+
+
+
+def custom_decoder():
+    decoder = ServerDecoder()
+    decoder.register(CustomDiagnosticRequest)
+    return decoder
 
 
 
@@ -135,6 +219,17 @@ def retrieve_configs(filename):
 
 
 
+#class CustomHandler(ModbusTcpHandler):
+#    def execute(self, request: ModbusRequest):
+#        if isinstance(request, ForceListenOnlyModeRequest):
+#            print("ForceListenOnlyModeRequest received!")
+#        return super().execute(request)
+
+
+
+
+
+
 # FUNCTION: run_tcp_server
 # PURPOSE:  An asynchronous function to be used to start a modbus tcp server. Blocks on the server.
 async def run_tcp_server(connection, context, identity=None):    
@@ -143,6 +238,7 @@ async def run_tcp_server(connection, context, identity=None):
         context=context, 
         address=("0.0.0.0", connection["port"]), 
         identity=identity,
+        #framer=lambda *args, **kwargs: ModbusSocketFramer(custom_decoder())
     ) 
     logging.info(f"Starting TCP Server. IP: {connection['ip']}, Port: {connection['port']}")
     await tcp_server.serve_forever()

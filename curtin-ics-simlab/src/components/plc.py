@@ -43,7 +43,7 @@ import time
 import logging
 import utils
 import pymodbus
-from utils import StateAwareSlaveContext
+#from utils import StateAwareSlaveContext
 from flask import Flask, jsonify
 from threading import Thread
 from pymodbus.client import ModbusTcpClient, ModbusSerialClient
@@ -321,7 +321,7 @@ async def main():
     di = ModbusSequentialDataBlock.create()
     hr = ModbusSequentialDataBlock.create()
     ir = ModbusSequentialDataBlock.create()
-    slave_context = StateAwareSlaveContext(co=co, di=di, hr=hr, ir=ir)
+    slave_context = ModbusSlaveContext(co=co, di=di, hr=hr, ir=ir)
     context = ModbusServerContext(slaves=slave_context, single=True)
 
     # start any inbound connection servers (tcp, rtu or both) with the same context
