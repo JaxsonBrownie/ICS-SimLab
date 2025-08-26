@@ -32,7 +32,7 @@
 #
 # Author: Jaxson Brown
 # Organisation: Curtin University
-# Last Modified: 2025-08-17
+# Last Modified: 2025-08-27
 # -----------------------------------------------------------------------------
 
 # FILE PURPOSE: Simulates a sensor. Takes input from a simulated physical process.
@@ -44,7 +44,7 @@ import time
 import utils
 from flask import Flask, jsonify
 from threading import Thread
-from pymodbus.datastore import ModbusSequentialDataBlock, ModbusSlaveContext, ModbusServerContext
+from pymodbus.datastore import ModbusSequentialDataBlock, ModbusDeviceContext, ModbusServerContext
 
 logging.basicConfig(level=logging.INFO, format='%(levelname)s - %(message)s')
 logging.getLogger('werkzeug').setLevel(logging.ERROR)
@@ -145,13 +145,13 @@ async def main():
     configs = utils.retrieve_configs("config.json")
     logging.info(f"Starting Sensor")
 
-    # create slave context (by default will have all address ranges)
+    # create device context (by default will have all address ranges)
     co = ModbusSequentialDataBlock.create()
     di = ModbusSequentialDataBlock.create()
     hr = ModbusSequentialDataBlock.create()
     ir = ModbusSequentialDataBlock.create()
-    slave_context = ModbusSlaveContext(co=co, di=di, hr=hr, ir=ir)
-    context = ModbusServerContext(slaves=slave_context, single=True)
+    device_context = ModbusDeviceContext(co=co, di=di, hr=hr, ir=ir)
+    context = ModbusServerContext(devices=device_context, single=True)
 
     # start any configured servers (tcp, rtu or both) with the same context
     values = {"co": co, "di": di, "hr": hr, "ir": ir}

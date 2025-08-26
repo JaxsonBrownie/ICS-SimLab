@@ -32,7 +32,7 @@
 #
 # Author: Jaxson Brown
 # Organisation: Curtin University
-# Last Modified: 2025-08-26
+# Last Modified: 2025-08-27
 # -----------------------------------------------------------------------------
 
 # FILE PURPOSE: Common functions to be used in all components
@@ -42,170 +42,9 @@ import time
 import logging
 from pymodbus.client import ModbusTcpClient, ModbusSerialClient
 from pymodbus.server import ModbusTcpServer, ModbusSerialServer
-from pymodbus.transaction import ModbusSocketFramer
-from pymodbus.pdu import ModbusRequest, ModbusResponse, ExceptionResponse
-from pymodbus.factory import ServerDecoder
-from pymodbus.diag_message import ForceListenOnlyModeRequest, DiagnosticStatusRequest
-from pymodbus.datastore import ModbusSlaveContext, ModbusSequentialDataBlock
-from pymodbus.exceptions import ModbusIOException
 
 # GLOBAL VARIABLES
 listen_only = False
-
-
-
-# CLASS:    CustomDiagnosticRequest
-# PURPOSE:  Implements function code 8 (diagnostics)
-#class CustomDiagnosticRequest(ModbusRequest):
-#    function_code = 8
-
-    # constructor
-#    def __init__(self, sub_function=0, data=b''):
-#        super().__init__()
-#        self.sub_function = sub_function
-#        self.data = data
-
-    # handle decoding requests
-#    def decode(self, data):
-#        self.sub_function = int.from_bytes(data[0:2], 'big')
-#        self.data = data[2:]
-
-    # handle post decoding execution
-#    def execute(self, context):
-#        global listen_only
-
-        # force listen only
-#        if self.sub_function == 4:
-#            print("Entering Listen Only mode...")
-#            listen_only = True
-#            return None
-        
-        # echo request otherwise
-#        return self
-
-
-
-
-
-# ----------------------------------------------------------------------- #
-# Custom Synchronous Modbus TCP Server to detect ForceListenOnlyModeRequest
-# ----------------------------------------------------------------------- #
-'''
-class CustomModbusTcpServer(ModbusTcpServer):
-    """
-    A custom synchronous Modbus TCP Server that can detect when a
-    ForceListenOnlyModeRequest has been sent.
-    """
-    def __init__(self, context, **kwargs):
-        super().__init__(context, **kwargs)
-        print("ASFKJDSKFNSKLJG JSBDGBSHLIGBLHSDBGHJBGLBGIJLBSDKJLBFSJLBGLJ")
-
-    def process_request(self, request):
-        print("NIGGA")
-        return super().process_request(request)
-
-
-    def execute(self, request: ModbusRequest):
-        """
-        Execute the request and check for ForceListenOnlyModeRequest.
-        This method is synchronous.
-
-        :param request: The incoming Modbus request.
-        :return: The Modbus response.
-        """
-        print(f"Received request: {request}")
-
-        # Check if the received request is a ForceListenOnlyModeRequest
-        if isinstance(request, ForceListenOnlyModeRequest):
-            print("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
-            print("!!! ForceListenOnlyModeRequest DETECTED by server !!!")
-            print("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
-            # In a real synchronous scenario, you would implement specific logic here.
-            # For this example, we'll just log it and return a successful response
-            # to acknowledge the command.
-            return ModbusResponse() # A simple, empty response for acknowledge
-        try:
-            # If it's not a ForceListenOnlyModeRequest, proceed with normal synchronous execution
-            response = super().execute(request)
-        except ModbusIOException as exc:
-            print(f"Error executing request: {exc}")
-            response = ExceptionResponse(request.function_code, exc.exception_code)
-        return response
-'''
-
-
-
-
-
-
-
-
-
-
-
-
-# CLASS:    CustomServerDecoder
-# PURPOSE:  Implements custom request decoders
-#class CustomServerDecoder(ServerDecoder):
-#    def __init__(self):
-#        super().__init__()
-#        self.register(CustomDiagnosticRequest)
-
-'''
-class StateAwareSlaveContext(ModbusSlaveContext):
-    # contructor
-    def __init__(self, *args, **kwargs):
-        self.listen_only = False
-        super().__init__(*args, **kwargs)
-    
-    # overrise th PDU processor to handle state change before delegating to standard datastore
-    def execute(self, request):
-        # handle function code 8
-        if isinstance(request, ForceListenOnlyModeRequest):
-            # handle subfunction 1 - restart communications 
-            if request.sub_function_code == 0x01:
-                if self.listen_only:
-                    print("Received RESTART command. Returning to NORMAL mode.")
-                    self.listen_only = False
-                return request
-            
-            # handle subfunction 4 - force listen only mode
-            if request.sub_function_code == 0x04:
-                print("Received FORCE LISTEN ONLY command.")
-                self.listen_only = True
-                return request
-        
-        # if in force listen mode, ignore all other requests
-        if self.listen_only:
-            print("Ignoring request")
-            return None
-        
-        # else use default handler
-        return super().execute(request)
-'''
-
-
-
-
-class CustomDiagnosticRequest(DiagnosticStatusRequest):
-    # constructor
-    def __init__(self, sub_function_code=0, data=b''):
-        super().__init__(sub_function_code=sub_function_code, data=data)
-
-    def execute(self, context):
-        global listen_only
-
-        return super().execute(context)
-    
-
-    
-
-
-
-def custom_decoder():
-    decoder = ServerDecoder()
-    decoder.register(CustomDiagnosticRequest)
-    return decoder
 
 
 
@@ -216,17 +55,6 @@ def retrieve_configs(filename):
         content = config_file.read()
         configs = json.loads(content)
     return configs
-
-
-
-#class CustomHandler(ModbusTcpHandler):
-#    def execute(self, request: ModbusRequest):
-#        if isinstance(request, ForceListenOnlyModeRequest):
-#            print("ForceListenOnlyModeRequest received!")
-#        return super().execute(request)
-
-
-
 
 
 

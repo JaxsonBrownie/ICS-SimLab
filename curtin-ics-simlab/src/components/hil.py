@@ -32,7 +32,7 @@
 #
 # Author: Jaxson Brown
 # Organisation: Curtin University
-# Last Modified: 2025-08-17
+# Last Modified: 2025-08-27
 # -----------------------------------------------------------------------------
 
 # FILE PURPOSE: Simulates the physical layer. Data is written to the 

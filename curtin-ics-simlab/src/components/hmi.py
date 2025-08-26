@@ -32,7 +32,7 @@
 #
 # Author: Jaxson Brown
 # Organisation: Curtin University
-# Last Modified: 2025-08-17
+# Last Modified: 2025-08-27
 # -----------------------------------------------------------------------------
 
 # FILE PURPOSE: Implements the functionality of a Human Machine Interface device (HMI)
@@ -43,9 +43,8 @@ import logging
 import utils
 from flask import Flask, jsonify
 from threading import Thread
-from pymodbus.client import ModbusTcpClient, ModbusSerialClient
-from pymodbus.server import ModbusTcpServer, ModbusSerialServer
-from pymodbus.datastore import ModbusSequentialDataBlock, ModbusSlaveContext, ModbusServerContext
+from pymodbus.datastore import ModbusSequentialDataBlock, ModbusDeviceContext, ModbusServerContext
+from pymodbus.client.base import ModbusBaseClient
 
 logging.basicConfig(level=logging.INFO, format='%(levelname)s - %(message)s')
 logging.getLogger('werkzeug').setLevel(logging.ERROR)
@@ -94,7 +93,7 @@ def init_outbound_cons(configs):
 
 # FUNCTION: monitor
 # PURPOSE:  A monitor thread to continuously read data from a defined and intialised connection
-def monitor(value_config, monitor_configs, modbus_con, values):
+def monitor(value_config, monitor_configs, modbus_con : ModbusBaseClient, values):
     logging.info(f"Starting Monitor: {monitor_configs['id']}")
     interval = monitor_configs["interval"]
     value_type = monitor_configs["value_type"]
@@ -105,16 +104,16 @@ def monitor(value_config, monitor_configs, modbus_con, values):
         try:
             # select the correct function
             if value_type == "coil":
-                response_values = modbus_con.read_coils(out_address-1, count).bits
+                response_values = modbus_con.read_coils(out_address-1, count=count).bits
                 values["co"].setValues(value_config["address"], response_values)
             elif value_type == "discrete_input":
-                response_values = modbus_con.read_discrete_inputs(out_address-1, count).bits
+                response_values = modbus_con.read_discrete_inputs(out_address-1, count=count).bits
                 values["di"].setValues(value_config["address"], response_values)
             elif value_type == "holding_register":
-                response_values = modbus_con.read_holding_registers(out_address-1, count).registers
+                response_values = modbus_con.read_holding_registers(out_address-1, count=count).registers
                 values["hr"].setValues(value_config["address"], response_values)
             elif value_type == "input_register":
-                response_values = modbus_con.read_input_registers(out_address-1, count).registers
+                response_values = modbus_con.read_input_registers(out_address-1, count=count).registers
                 values["ir"].setValues(value_config["address"], response_values)
         except:
             logging.error("Error: couldn't read values")
@@ -183,13 +182,13 @@ async def main():
     configs = utils.retrieve_configs("config.json")
     logging.info(f"Starting HMI")
 
-    # create slave context (by default will have all address ranges)
+    # create device context (by default will have all address ranges)
     co = ModbusSequentialDataBlock.create()
     di = ModbusSequentialDataBlock.create()
     hr = ModbusSequentialDataBlock.create()
     ir = ModbusSequentialDataBlock.create()
-    slave_context = ModbusSlaveContext(co=co, di=di, hr=hr, ir=ir)
-    context = ModbusServerContext(slaves=slave_context, single=True)
+    device_context = ModbusDeviceContext(co=co, di=di, hr=hr, ir=ir)
+    context = ModbusServerContext(devices=device_context, single=True)
 
     # start any inbound connection servers (tcp, rtu or both) with the same context
     values = {"co": co, "di": di, "hr": hr, "ir": ir}
