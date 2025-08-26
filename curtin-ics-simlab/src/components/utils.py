@@ -45,7 +45,7 @@ from pymodbus.server import ModbusTcpServer, ModbusSerialServer
 from pymodbus.transaction import ModbusSocketFramer
 from pymodbus.pdu import ModbusRequest
 from pymodbus.factory import ServerDecoder
-from pymodbus.diag_message import DiagnosticStatusRequest
+from pymodbus.diag_message import ForceListenOnlyModeRequest
 from pymodbus.datastore import ModbusSlaveContext, ModbusSequentialDataBlock
 
 # GLOBAL VARIABLES
@@ -91,17 +91,17 @@ listen_only = False
 #        super().__init__()
 #        self.register(CustomDiagnosticRequest)
 
-
+# TODO: NOT WORKING
 class StateAwareSlaveContext(ModbusSlaveContext):
     # contructor
     def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
         self.listen_only = False
+        super().__init__(*args, **kwargs)
     
     # overrise th PDU processor to handle state change before delegating to standard datastore
     def execute(self, request):
         # handle function code 8
-        if isinstance(request, DiagnosticStatusRequest):
+        if isinstance(request, ForceListenOnlyModeRequest):
             # handle subfunction 1 - restart communications 
             if request.sub_function_code == 0x01:
                 if self.listen_only:

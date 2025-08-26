@@ -42,6 +42,7 @@ import asyncio
 import time
 import logging
 import utils
+import pymodbus
 from utils import StateAwareSlaveContext
 from flask import Flask, jsonify
 from threading import Thread
@@ -65,6 +66,7 @@ try:
     import logic # type: ignore
 except ModuleNotFoundError:
     logging.error("Could not import logic for PLC component")
+print("pymodbus version: ", pymodbus.__version__)
 
 
 
