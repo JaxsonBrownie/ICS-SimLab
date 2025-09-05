@@ -27,12 +27,14 @@ This repository presents **ICS-SimLab**, a Docker-based framework for building c
 ```yaml
 If you find this work useful, then please consider for citing the paper:
 
-@unpublished{brown2025ics-simlab,
+@inproceedings{brown2025ics-simlab,
   title        = {ICS-SimLab: a Containerized Approach for Simulating Industrial Control Systems for Cyber Security Research},
   author       = {Brown, Jaxson and Pham, Duc-Son and Soh, Sieteng and Motalebi, Foad and Eswaran, Sivaraman and Almashor, Mahathir},
   year         = {2025},
-  note         = {Accepted for publication in Proceedings of the First International Workshop on Secure Industrial Control Systems and Industrial IoT},
-  institution  = {Curtin University, Curtin University Malaysia, CSIRO}
+  note         = {Accepted for publication},
+  booktitle    = {First International Workshop on Secure Industrial Control Systems and Industrial IoT},
+  institution  = {Curtin University},
+  organization = {IEEE},
 }
 ```
 
