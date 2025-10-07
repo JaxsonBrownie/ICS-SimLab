@@ -3,7 +3,7 @@
     {
         "network":
         {
-            "ip": "192.168.0.2",
+            "ip": "192.168.0.111",
             "port": 8501,
             "docker_network": "vlan1"
         }
