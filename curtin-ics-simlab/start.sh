@@ -5,19 +5,21 @@ if [ -z "$1" ]; then
     exit 1
 fi
 
-if [ "$EUID" -ne 0 ]; then
-  echo "Please run this script with sudo:"
-  echo "sudo $0 <config_directory>"
-  exit 1
-fi
+#if [ "$EUID" -ne 0 ]; then
+#  echo "Please run this script with sudo:"
+#  echo "sudo $0 <config_directory>"
+#  exit 1
+#fi
 
 
 echo "ICS-SimLab STARTED"
 
 echo "REMOVING PREVIOUS DIRECTORIES"
 rm -r simulation
-echo "Revoking sudo credentials..."
-sudo -k
+
+#echo "Revoking sudo credentials..."
+#sudo -k
+
 docker system prune -f
 
 echo "ACTIVATING ENVIRONMENT"

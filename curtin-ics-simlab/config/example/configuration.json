@@ -82,7 +82,8 @@
                 ]
             },
             "monitors": [],
-            "controllers": []
+            "controllers": [],
+            "logic": "plc.py"
         }
     ],
 
