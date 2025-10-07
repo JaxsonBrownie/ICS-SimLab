@@ -328,7 +328,7 @@
     [
         {
             "docker_name": "vlan1",
-            "name": "ied_network",
+            "name": "ics_simlab",
             "subnet": "192.168.0.0/24"
         }
     ]

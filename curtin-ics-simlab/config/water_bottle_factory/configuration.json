@@ -625,7 +625,7 @@
     [
         {
             "docker_name": "vlan1",
-            "name": "bottle_factory",
+            "name": "ics_simlab",
             "subnet": "192.168.0.0/24"
         }
     ]
