@@ -493,7 +493,7 @@ def build_plc_directory(json_content, directory):
 
         # copy PLC code and logic file
         logic_file = plc["logic"]
-        shutil.copy(f"{directory}logic/{logic_file}", f"{root_path}/simulation/containers/{plc['name']}/src/logic.py")
+        shutil.copy(f"{directory}/logic/{logic_file}", f"{root_path}/simulation/containers/{plc['name']}/src/logic.py")
         shutil.copy(f"{root_path}/src/components/utils.py", f"{root_path}/simulation/containers/{plc['name']}/src")
         shutil.copy(f"{root_path}/src/components/plc.py", f"{root_path}/simulation/containers/{plc['name']}/src")
 
@@ -577,7 +577,7 @@ def build_hil_directory(json_content, directory):
 
         # copy logic file and code
         logic_file = hil["logic"]
-        shutil.copy(f"{directory}logic/{logic_file}", f"{root_path}/simulation/containers/{hil['name']}/src/logic.py")
+        shutil.copy(f"{directory}/logic/{logic_file}", f"{root_path}/simulation/containers/{hil['name']}/src/logic.py")
         shutil.copy(f"{root_path}/src/components/hil.py", f"{root_path}/simulation/containers/{hil['name']}/src")
         shutil.copy(f"{root_path}/src/components/utils.py", f"{root_path}/simulation/containers/{hil['name']}/src")
 
