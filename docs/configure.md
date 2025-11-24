@@ -7,9 +7,9 @@
 ## Configuration Directory
 ICS-Sim uses a directory containing configuration information to build a custom ICS simulation. The directory needs to contain the following:
 
-1. `configuration.json` - This is a JSON file containing the configuration for all components and networks (both serial ports and IP/TCP networks), as well as details on how the components talk to each other. For full details on how to create your own configuration, refer to the [configuration documentation](configure.md).
+1. `configuration.json` - This is a JSON file containing the configuration for all components and networks (both serial ports and IP/TCP networks), as well as details on how the components talk to each other.
 
-2. `logic/` - This is a directory that holds Python files to implement the logic for components that require custom logic (PLCs and HILs). For information on how these work again refer to the [configuration documentation](configure.md).
+2. `logic/` - This is a directory that holds Python files to implement the logic for components that require custom logic (PLCs and HILs).
 
 The name of the configuration file must be `configuration.json` and the name of the logic directory must be `logic`, but the Python files within the logic directory can be named whatever (the Python file names are referenced in the JSON config file).
 
