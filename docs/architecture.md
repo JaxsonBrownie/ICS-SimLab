@@ -71,3 +71,8 @@ Below are descriptions of what each script does, noting that the specific config
 - `sensor.py` - Starts configured Modbus RTU/TCP slaves/servers. Continuously reads values from the SQLite3 database and writes them to Modbus register values in the slave/server.
 
 - `hil.py` - Connects to the SQLite3 database and begins altering values from the database based on some predefined python file.
+
+---
+Read [configure.md](docs/configure.md) for a guide on configuring your own ICS simulation using ICS-SimLab.
+
+---
