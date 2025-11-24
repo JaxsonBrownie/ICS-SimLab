@@ -71,6 +71,9 @@ This repository has a 3 pre-defined simulation configurations. They are located 
 </center>
 
 ---
+Read [architecture.md](architecture.md) next for an outline on the software stack and architecture.
+
+---
 ### References
 A. Dehlaghi-Ghadim, A. Balador, M. H. Moghadam, H. Hansson, and
 M. Conti, “Icssim—a framework for building industrial control systems
